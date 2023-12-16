@@ -6,7 +6,7 @@
 #writeback
 
 #while loop for each cycle (until all instructions are finished)
-
+#if each stage is empty then break
 #for loop for each stage: (from writeback to fetch) (one cycle)
     #find the oldest instruction in the pipeline
     #if there is no instruction then fetch the first instruction   
@@ -14,4 +14,3 @@
     #if ID/EX pipeline register is empty then do nothing
     #if IF/IDWrite = 0 then do not fetch the next instruction 
     #(actually refetch the next instruction, but do not write it to IF/ID pipeline register)
-    #check if the instruction is finished and remove it from the pipeline
