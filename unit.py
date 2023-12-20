@@ -1,4 +1,5 @@
 import pipeline_register as pr
+import pipeline_register as pr
 #a class to simulate the control unit 
 class ControlUnit:
     
