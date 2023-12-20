@@ -4,7 +4,7 @@ import compiler
 #read instructions from file
 #parse instructions
 r = reader.Reader("memory.txt")
-ins_memory = r.get_ins_memory() #('instruction', ['rs', 'rt', 'rd']) ex: ('add', ['$1', '$2', '$3'])
+ins_memory = r.get_ins_memory() #('instruction', ['rs, rt, rd'] ) ex: ('add', ['$1, $2, $3'])
 #simulate pipeline
 
 #output statistics

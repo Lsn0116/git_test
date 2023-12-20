@@ -1,3 +1,4 @@
+import pipeline_register as pr
 #a class to simulate the control unit 
 class ControlUnit:
     
@@ -33,59 +34,49 @@ class ControlUnit:
             self.MemToReg = 'X'
 
     def get_control_signals(self):
-        return [self.RegDst, self.ALUSrc, self.Branch, self.MemRead, self.MemWrite, self.RegWrite, self.MemToReg]
+        return {'RegDst':self.RegDst,'ALUSrc':self.ALUSrc, 'Branch':self.Branch, 'MemRead':self.MemRead, 'MemWrite':self.MemWrite, 'RegWrite':self.RegWrite, 'MemToReg':self.MemToReg}
 
 
 #a class to simulate the hazard detection unit
+#check if the instruction need to be stall (lw, sw, beq)
+#check the last and second last instruction in the pipeline
 class HazardDetectionUnit:
     
     def __init__(self):
-        self.control_signals = ""
-        self.ID_EX_registers = ""
-        self.EX_MEM_registers = ""
-        self.MEM_WB_registers = ""
-        self.forwarding = ""
-        self.stalling = ""
-        self.branch = ""
+        self.rs = ''
+        self.rt = ''
+        self.rd = ''
+        self.last_rd = '' #ID/EX.rd
+        self.last_rt = '' #ID/EX.rt
+        self.second_last_rd = '' #EX/MEM.rd
+        self.second_last_rt = '' #EX/MEM.rt
 
-    def set_control_signals(self, control_signals):
-        self.control_signals = control_signals
 
-    def set_ID_EX_registers(self, ID_EX_registers):
-        self.ID_EX_registers = ID_EX_registers
+class ForwardingUnit:
+    #in ID stage
 
-    def set_EX_MEM_registers(self, EX_MEM_registers):
-        self.EX_MEM_registers = EX_MEM_registers
-
-    def set_MEM_WB_registers(self, MEM_WB_registers):
-        self.MEM_WB_registers = MEM_WB_registers
-
-    def set_forwarding(self, forwarding):
-        self.forwarding = forwarding
-
-    def set_stalling(self, stalling):
-        self.stalling = stalling
-
-    def set_branch(self, branch):
-        self.branch = branch
-
-    def get_control_signals(self):
-        return self.control_signals
-
-    def get_ID_EX_registers(self):
-        return self.ID_EX_registers
-
-    def get_EX_MEM_registers(self):
-        return self.EX_MEM_registers
-
-    def get_MEM_WB_registers(self):
-        return self.MEM_WB_registers
-
-    def get_forwarding(self):
-        return self.forwarding
-
-    def get_stalling(self):
-        return self.stalling
-
-    def get_branch(self):
-        return self.branch
+    def __init__(self,this_instruction:pr.PipelineRegister(), last_instruction:pr.PipelineRegister(), second_last_instruction:pr.PipelineRegister()):
+        self.this_instruction = this_instruction
+        self.last_instruction = last_instruction
+        self.second_last_instruction = second_last_instruction
+        self.rs = this_instruction.registers['rs']
+        self.rt = this_instruction.registers['rt']
+        self.last_rd = last_instruction.registers['rd']
+        self.last_rt = last_instruction.registers['rt']
+        self.second_last_rd = second_last_instruction.registers['rd']
+        self.second_last_rt = second_last_instruction.registers['rt']
+        
+    
+    def checkForwarding(self):
+    #check rd is the same as ID/EX.rt or ID/EX.rs and EX/MEM.rt or EX/MEM.rs
+    #if yes then forward(replace the value of the register with the value in the pipeline register)
+        if(self.second_last_rd!='' and (self.last_rd == self.rs or self.last_rd == self.rt)):
+            return True    
+        elif(self.last_rt != '' and (self.last_rt == self.rs or self.last_rt == self.rt)):
+            return True
+        elif(self.second_last_rd != '' and (self.second_last_rd == self.rs or self.second_last_rd == self.rt)):
+            return True
+        elif(self.second_last_rt != '' and (self.second_last_rt == self.rs or self.second_last_rt == self.rt)):
+            return True
+        
+        
