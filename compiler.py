@@ -32,7 +32,6 @@ class Compiler:
         self.memory = rnm.Memory(ins_memory)
         self.control_unit = unit.ControlUnit()
         self.hazard_detection_unit = unit.HazardDetectionUnit()
-      #  self.forwarding_unit = unit.ForwardingUnit()
         self.PC_word = 0
         self.pipeline_registers = {
             "IF/ID": pr.PipelineRegister(),
@@ -40,13 +39,15 @@ class Compiler:
             "EX/MEM": pr.PipelineRegister(),
             "MEM/WB": pr.PipelineRegister(),
         }
+        self.forwarding_unit = unit.ForwardingUnit()
 
     def compile(self):
         print("compile\n")
         self.IF_stage()
 
         # compile the instructions until finished the all instructions
-        """while(self.PC_word < len(self.memory.get_instruction_memory())):
+        """
+        while(self.PC_word < len(self.memory.get_instruction_memory())):
             #WB stage
             #MEM stage
             #EX stage
@@ -54,30 +55,28 @@ class Compiler:
             #IF stage
             pass
 
-        return"""
+        return
+        """
 
     """you may need some functions to help you to do the pipeline stages, add these to the pipeline register class (def xxxx(): )"""
 
     def IF_stage(self):
 
-        # reg={}
-        prp = pr.PipelineRegister
         print("--------------------------IF stage------------------\n")
         
-        print(self.memory.get_ins_memory(self.PC_word)[0])
-        prp.set_name(prp,self.memory.get_ins_memory(self.PC_word)[0])  # get instruction
+        # print(self.memory.get_ins_memory(self.PC_word)[0])
         split_result = self.memory.get_ins_memory(self.PC_word)[1].split(",")
         if self.memory.get_ins_memory(self.PC_word)[0] == "lw" or self.memory.get_ins_memory(self.PC_word)[0] == "sw":
             if len(split_result) == 2:
                 rt = split_result[0].strip()
                 temp = split_result[1].split("(")
-                mem = temp[0].strip()
+                immediate = temp[0].strip()
                 rs=temp[1].strip(")")
-               
+               #check not stall
                 if self.pipeline_registers["IF/ID"].get_write() == 1:
-                    self.pipeline_registers["IF/ID"].set_registers({"rt": rt, "immediate": mem, "rs": rs})
-                reg = self.pipeline_registers["IF/ID"].get_register()
-                print(reg)  # {'rt': '$2', 'mem': '8', 'rs': '$0'}
+                    self.pipeline_registers["IF/ID"].set_registers({"rt": rt, "immediate": immediate, "rs": rs})
+                # reg = self.pipeline_registers["IF/ID"].get_register()
+                # print(reg)  # {'rt': '$2', 'mem': '8', 'rs': '$0'}
 
         elif (self.memory.get_ins_memory(self.PC_word)[0] == "add" or self.memory.get_ins_memory(self.PC_word)[0] == "sub"):
             if len(split_result) == 3:
@@ -86,10 +85,10 @@ class Compiler:
                 rs = split_result[2].strip()
                 if self.pipeline_registers["IF/ID"].get_write() == 1:
                     self.pipeline_registers["IF/ID"].set_registers ({"rs": rs,"rt": rt,"rd": rd,})
-                reg=self.pipeline_registers["IF/ID"].get_register()
-                print(reg)  # {'rd': '$6', 'rt': '$4', 'rs': '$5'}
+                # reg=self.pipeline_registers["IF/ID"].get_register()
+                # print(reg)  # {'rd': '$6', 'rt': '$4', 'rs': '$5'}
         self.pipeline_registers["IF/ID"].set_name(self.memory.get_ins_memory(self.PC_word)[0])
-        
+        print(self.pipeline_registers["IF/ID"].get_name())
         print(self.pipeline_registers["IF/ID"].get_register())
        
 

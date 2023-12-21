@@ -40,6 +40,7 @@ class ControlUnit:
 #a class to simulate the hazard detection unit
 #check if the instruction need to be stall (lw, sw, beq)
 #check the last and second last instruction in the pipeline
+#check fowarding
 class HazardDetectionUnit:
     
     def __init__(self):
@@ -55,16 +56,27 @@ class HazardDetectionUnit:
 class ForwardingUnit:
     #in ID stage
 
-    def __init__(self,this_instruction:pr.PipelineRegister(), last_instruction:pr.PipelineRegister(), second_last_instruction:pr.PipelineRegister()):
+    def __init__(self):
+        self.this_instruction:pr.PipelineRegister
+        self.last_instruction:pr.PipelineRegister
+        self.second_last_instruction:pr.PipelineRegister
+        self.rs =''
+        self.rt =''
+        self.last_rd=''
+        self.last_rt=''
+        self.second_last_rd='' 
+        self.second_last_rt=''
+    
+    def set(self, this_instruction, last_instruction, second_last_instruction):
         self.this_instruction = this_instruction
         self.last_instruction = last_instruction
         self.second_last_instruction = second_last_instruction
-        self.rs = this_instruction.registers['rs']
-        self.rt = this_instruction.registers['rt']
-        self.last_rd = last_instruction.registers['rd']
-        self.last_rt = last_instruction.registers['rt']
-        self.second_last_rd = second_last_instruction.registers['rd']
-        self.second_last_rt = second_last_instruction.registers['rt']
+        self.rs = self.this_instruction.get_one_register('rs')
+        self.rt = this_instruction.get_one_register('rt')
+        self.last_rd = last_instruction.get_one_register('rd')
+        self.last_rt = last_instruction.get_one_register('rt')
+        self.second_last_rd = second_last_instruction.get_one_register('rd')
+        self.second_last_rt = second_last_instruction.get_one_register('rt')
         
     
     def checkForwarding(self):
