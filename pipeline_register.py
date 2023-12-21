@@ -30,7 +30,9 @@ class PipelineRegister:
     
     #each stage may need to remove the control signals that it already need
     def remove_control_signals(self, control_signals):
-        del self.control_signals[control_signals]
+        for signal in control_signals:
+            if signal in self.control_signals:
+                 del self.control_signals[control_signals]
 
     def add_data(self, key, value):
         self.data[key] = value

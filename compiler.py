@@ -67,6 +67,12 @@ class Compiler:
         #     self.instructions.append([instruction, rest])
         #     #increment the PC (word)
         #     self.PC_word += 1
+        if not self.pipeline_registers['ID/EX'].control_signals.get('Branch'):
+            instruction = self.memory.get_instruction_memory(self.PC_word)
+            self.pipeline_registers['IF/ID'].set_name(instruction[0])
+            # Update PC only if IF/IDWrite is 1
+            if self.pipeline_registers['IF/ID'].control_signals.get('IF/IDWrite'):
+                self.PC_word += 1
         pass
 
     def ID_stage(self):
@@ -89,8 +95,48 @@ class Compiler:
         pass
 
     def MEM_stage(self):
-        
+        if self.pipeline_registers['EX/MEM'].write:
+            takeBranch = self.pipeline_registers['EX/MEM'].control_signals.get('Branch')
+            memRead = self.pipeline_registers['EX/MEM'].control_signals.get('MemRead')
+            memWrite = self.pipeline_registers['EX/MEM'].control_signals.get('MemWrite')
+            aluResult = self.pipeline_registers['EX/MEM'].data.get('ALUResult')
+            destRegister = self.pipeline_registers['EX/MEM'].registers.get('DestinationRegister')
+
+            if takeBranch and aluResult == 0:
+                self.PC_word = self.pipeline_registers['EX/MEM'].data.get('BranchTarget')
+
+            if memRead:
+                read_address = aluResult
+                self.pipeline_registers['MEM/WB'].data['ReadData'] = self.memory.get_data_memory(read_address)
+
+            if memWrite:
+                write_address = aluResult
+                write_data = self.pipeline_registers['EX/MEM'].data.get('WriteData')
+                self.memory.set_data_memory(write_address, write_data)
+
+            self.pipeline_registers['MEM/WB'].registers['DestinationRegister'] = destRegister
+
+        self.pipeline_registers['EX/MEM'].write = 0
+        self.pipeline_registers['EX/MEM'].data.clear()
+        self.pipeline_registers['EX/MEM'].registers.clear()
+        self.pipeline_registers['EX/MEM'].control_signals.clear()
+
+        self.MEM_over = True
+
         pass
 
     def WB_stage(self):
+        if self.pipeline_registers['MEM/WB'].write:
+            data_to_write = self.pipeline_registers['MEM/WB'].data.get('WriteData')
+            if data_to_write is not None and self.pipeline_registers['MEM/WB'].control_signals.get('RegWrite'):
+                destination_register = self.pipeline_registers['MEM/WB'].registers.get('DestinationRegister')
+                self.register_file.set_register_value(destination_register, data_to_write)
+
+        self.pipeline_registers['MEM/WB'].write = 0
+        self.pipeline_registers['MEM/WB'].data.clear()
+        self.pipeline_registers['MEM/WB'].registers.clear()
+        self.pipeline_registers['MEM/WB'].control_signals.clear()
+
+        self.WB_over = True
         pass
+
