@@ -42,12 +42,10 @@ class Compiler:
         self.forwarding_unit = unit.ForwardingUnit()
 
     def compile(self):
-        print("compile\n")
-        self.IF_stage()
-
-        # compile the instructions until finished the all instructions
-        """
-        while(self.PC_word < len(self.memory.get_instruction_memory())):
+       
+        # compile the instructions until finished the all instructions 
+        while(self.PC_word < len(self.memory.get_all_ins_memory())):
+            self.IF_stage()
             #WB stage
             #MEM stage
             #EX stage
@@ -56,14 +54,16 @@ class Compiler:
             pass
 
         return
-        """
+        
 
     """you may need some functions to help you to do the pipeline stages, add these to the pipeline register class (def xxxx(): )"""
 
     def IF_stage(self):
-
+        if self.pipeline_registers['IF/ID'].get_write() ==0:
+            return
         print("--------------------------IF stage------------------\n")
-        
+        #pc_word
+
         # print(self.memory.get_ins_memory(self.PC_word)[0])
         split_result = self.memory.get_ins_memory(self.PC_word)[1].split(",")
         if self.memory.get_ins_memory(self.PC_word)[0] == "lw" or self.memory.get_ins_memory(self.PC_word)[0] == "sw":
@@ -87,10 +87,20 @@ class Compiler:
                     self.pipeline_registers["IF/ID"].set_registers ({"rs": rs,"rt": rt,"rd": rd,})
                 # reg=self.pipeline_registers["IF/ID"].get_register()
                 # print(reg)  # {'rd': '$6', 'rt': '$4', 'rs': '$5'}
+        elif(self.memory.get_ins_memory(self.PC_word)[0]=="beq"):
+            if len(split_result) == 3:
+                rt = split_result[0].strip()
+                rs = split_result[1].strip()
+                immediate = split_result[2].strip()
+                if self.pipeline_registers["IF/ID"].get_write() == 1:
+                    self.pipeline_registers["IF/ID"].set_registers ({"rs": rs,"rt": rt,"immediate": immediate})
+
         self.pipeline_registers["IF/ID"].set_name(self.memory.get_ins_memory(self.PC_word)[0])
         print(self.pipeline_registers["IF/ID"].get_name())
         print(self.pipeline_registers["IF/ID"].get_register())
-       
+        
+        self.PC_word+=1
+       # self.ID_stage()       
 
         ###self.pipeline_registers['IF/ID'].set_name(self.instruction_memory[self.PC_word][0])
         # fetch the instruction from the instruction memory
@@ -111,10 +121,13 @@ class Compiler:
         #     self.PC_word += 1
         pass
 
-    def ID_stage(self, prp):
+    def ID_stage(self):
+      
+        print(self.PC_word)
+        '''
         print("IF/ID name:" + prp.name + "\n")  # IF/ID 中的指令名稱
         print("IF/ID register:")  # IF/ID 中的register
-        print(prp.get_register(prp))
+        print(prp.get_register(prp))'''
 
         #  print("\nIF/ID write"+self.write)
         # decide the control signals for the ID/EX pipeline register
@@ -127,12 +140,12 @@ class Compiler:
         # C_S = self.control_unit.get_control_signals()
         # self.pipeline_registers['ID/EX'].set_control_signals(C_S)
         # check branch (PC adder and reg compare(use the data stored in the pipeline register))
-        rs = self.pipeline_registers['IF/ID'].get_one_register('rs')
+        '''rs = self.pipeline_registers['IF/ID'].get_one_register('rs')
         rt = self.pipeline_registers['IF/ID'].get_one_register('rt')
         if(self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt)):
             self.PC_word += self.pipeline_registers['IF/ID'].get_one_register('immediate')
             return
-        pass
+        pass'''
 
     def EX_stage(self):
         # check ALUSrc
