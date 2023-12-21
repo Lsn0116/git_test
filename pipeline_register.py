@@ -8,9 +8,9 @@ class PipelineRegister:
 
     def __init__(self):
         self.name = "" #name of instruction
-        self.data = {} #data values
+        self.data :int #data values (after ALU operation)
         self.control_signals = {} #control signals
-        self.registers = {} #registers
+        self.registers = {} #registers {'rs': '$1', 'rt': '$2', 'rd': '$3'}
         self.write = 1 #write to the pipeline register 1 = yes, 0 = no
 
     def set_name(self, name):
@@ -18,6 +18,9 @@ class PipelineRegister:
     
     def set_data(self, data):
         self.data = data
+    
+    def get_data(self):
+        return self.data
 
     def set_control_signals(self, control_signals):
         self.control_signals = control_signals
@@ -36,4 +39,5 @@ class PipelineRegister:
 
     def add_data(self, key, value):
         self.data[key] = value
-        
+    
+    

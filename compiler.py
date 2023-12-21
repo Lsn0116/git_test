@@ -27,18 +27,22 @@ class Compiler:
     def __init__(self, ins_memory):
         self.register_file = rnm.RegisterFile()
         self.memory = rnm.Memory(ins_memory)
-        self.compile()
+        
         self.data_memory = self.memory.get_data_memory()
-        self.instruction_memory = self.memory.get_instruction_memory()
-        self.register_values = self.register_file.get_register_values()
+        # self.instruction_memory = self.memory.get_instruction_memory()
+        # self.register_values = self.register_file.get_register_values()
         self.pipeline_registers = {'IF/ID': pr.PipelineRegister(), 'ID/EX': pr.PipelineRegister(), 'EX/MEM': pr.PipelineRegister(), 'MEM/WB': pr.PipelineRegister()}
-        self.control_unit = unit.ControlUnit()
-        self.hazard_detection_unit = unit.HazardDetectionUnit()
-        self.forwarding_unit = unit.ForwardingUnit()
-        self.PC_word = 0
+        # self.control_unit = unit.ControlUnit()
+        # self.hazard_detection_unit = unit.HazardDetectionUnit()
+        # self.forwarding_unit = unit.ForwardingUnit()
+        # self.PC_word = 0
+        self.compile()
 
     def compile(self):
         #compile the instructions until finished the all instructions
+        self.pipeline_registers['IF/ID'].set_name(self.memory.get_instruction_memory(self.PC_word)[0])
+        print(self.pipeline_registers['IF/ID'].name)
+
         while(self.PC_word < len(self.memory.get_instruction_memory())):
             #WB stage
             #MEM stage
@@ -126,8 +130,10 @@ class Compiler:
         pass
 
     def WB_stage(self):
+        #check pipleline register MEM/WB can write or not
         if self.pipeline_registers['MEM/WB'].write:
-            data_to_write = self.pipeline_registers['MEM/WB'].data.get('WriteData')
+            #get the data from the pipeline register that already calculated
+            data_to_write = self.pipeline_registers['MEM/WB'].get_data()
             if data_to_write is not None and self.pipeline_registers['MEM/WB'].control_signals.get('RegWrite'):
                 destination_register = self.pipeline_registers['MEM/WB'].registers.get('DestinationRegister')
                 self.register_file.set_register_value(destination_register, data_to_write)
