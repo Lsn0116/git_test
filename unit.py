@@ -3,13 +3,13 @@ import pipeline_register as pr
 class ControlUnit:
     
     def __init__(self):
-        RegDst:str = '0'
-        ALUSrc:str = '0'
-        Branch:str = '0'
-        MemRead:str = '0'
-        MemWrite:str = '0'
-        RegWrite:str = '0'
-        MemToReg:str = '0'
+        self.RegDst:str = '0'
+        self.ALUSrc:str = '0'
+        self.Branch:str = '0'
+        self.MemRead:str = '0'
+        self.MemWrite:str = '0'
+        self.RegWrite:str = '0'
+        self.MemToReg:str = '0'
 
     def set_control_signals(self, instruction):
         if instruction == 'lw':
@@ -35,7 +35,7 @@ class ControlUnit:
 
     def get_control_signals(self):
         return {'RegDst':self.RegDst,'ALUSrc':self.ALUSrc, 'Branch':self.Branch, 'MemRead':self.MemRead, 'MemWrite':self.MemWrite, 'RegWrite':self.RegWrite, 'MemToReg':self.MemToReg}
-
+        
 
 #a class to simulate the hazard detection unit
 #check if the instruction need to be stall (lw, sw, beq)
@@ -51,6 +51,14 @@ class HazardDetectionUnit:
         self.last_rt = '' #ID/EX.rt
         self.second_last_rd = '' #EX/MEM.rd
         self.second_last_rt = '' #EX/MEM.rt
+    #----new def----------
+    '''def initialize_last_ins(self):
+        
+    def initialize_second_last_ins(self):
+
+    def checkHazard(self):
+    '''
+
 
 
 class ForwardingUnit:

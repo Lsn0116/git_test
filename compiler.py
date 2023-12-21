@@ -42,10 +42,13 @@ class Compiler:
         self.forwarding_unit = unit.ForwardingUnit()
 
     def compile(self):
-       
+        self.IF_stage()
+        
         # compile the instructions until finished the all instructions 
+        
         while(self.PC_word < len(self.memory.get_all_ins_memory())):
-            self.IF_stage()
+           # self.IF_stage()
+            #self.ID_stage()
             #WB stage
             #MEM stage
             #EX stage
@@ -98,8 +101,9 @@ class Compiler:
         self.pipeline_registers["IF/ID"].set_name(self.memory.get_ins_memory(self.PC_word)[0])
         print(self.pipeline_registers["IF/ID"].get_name())
         print(self.pipeline_registers["IF/ID"].get_register())
-        
+
         self.PC_word+=1
+        self.ID_stage()
        # self.ID_stage()       
 
         ###self.pipeline_registers['IF/ID'].set_name(self.instruction_memory[self.PC_word][0])
@@ -123,29 +127,41 @@ class Compiler:
 
     def ID_stage(self):
       
-        print(self.PC_word)
+        print("---------ID-----------------")
         '''
         print("IF/ID name:" + prp.name + "\n")  # IF/ID 中的指令名稱
         print("IF/ID register:")  # IF/ID 中的register
         print(prp.get_register(prp))'''
 
-        #  print("\nIF/ID write"+self.write)
         # decide the control signals for the ID/EX pipeline register
+        self.control_unit.set_control_signals(self.pipeline_registers["IF/ID"].get_name())
+        self.pipeline_registers["ID/EX"].set_control_signals(self.control_unit.get_control_signals())
+        print(self.pipeline_registers["ID/EX"].get_control_signals())#{'RegDst': '0', 'ALUSrc': '1', 'Branch': '0', 'MemRead': '1', 'MemWrite': '0', 'RegWrite': '1', 'MemToReg': '1'} 
+
+
         # read data from the register file, and store the data to the ID/EX pipeline register(if not stall and not forwarding and *branch?*)
         # dazard detection unit
         # forwarding unit
         # check RegDst(use the data self.control_unit.get_control_signals())
         # check forwading here if needed, replace the value of the register with the value in the pipeline register(EX/MEM or MEM/WB)
-        # self.control_unit.set_control_signals(self.pipeline_registers['IF/ID'].name)
-        # C_S = self.control_unit.get_control_signals()
-        # self.pipeline_registers['ID/EX'].set_control_signals(C_S)
+        '''self.control_unit.set_control_signals(self.pipeline_registers['IF/ID'].name)
+         C_S = self.control_unit.get_control_signals()
+         self.pipeline_registers['ID/EX'].set_control_signals(C_S)'''
+
         # check branch (PC adder and reg compare(use the data stored in the pipeline register))
-        '''rs = self.pipeline_registers['IF/ID'].get_one_register('rs')
-        rt = self.pipeline_registers['IF/ID'].get_one_register('rt')
-        if(self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt)):
-            self.PC_word += self.pipeline_registers['IF/ID'].get_one_register('immediate')
-            return
-        pass'''
+        '''if branch'''
+        if(self.pipeline_registers["IF/ID"].get_name()=='beq'):
+            rs = self.pipeline_registers['IF/ID'].get_one_register('rs')
+            rt = self.pipeline_registers['IF/ID'].get_one_register('rt')
+            if(self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt)):
+                self.PC_word += self.pipeline_registers['IF/ID'].get_one_register('immediate')
+                return
+        #IF/ID裡的值(ins,registers)傳給ID/EX   
+        self.pipeline_registers["ID/EX"].set_name(self.pipeline_registers["IF/ID"].get_name())
+        self.pipeline_registers["ID/EX"].set_registers (self.pipeline_registers["IF/ID"].get_register())
+        #print(self.pipeline_registers["ID/EX"].get_name())
+        #print(self.pipeline_registers["ID/EX"].get_register())
+        pass
 
     def EX_stage(self):
         # check ALUSrc

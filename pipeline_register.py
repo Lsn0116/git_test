@@ -45,3 +45,6 @@ class PipelineRegister:
 
     def get_one_register(self, i):
         return self.registers[i]
+    #-------new def------------------
+    def get_control_signals(self):
+        return self.control_signals
