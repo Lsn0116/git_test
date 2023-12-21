@@ -145,19 +145,21 @@ class Compiler:
             takeBranch = self.pipeline_registers['EX/MEM'].control_signals.get('Branch')
             memRead = self.pipeline_registers['EX/MEM'].control_signals.get('MemRead')
             memWrite = self.pipeline_registers['EX/MEM'].control_signals.get('MemWrite')
-            aluResult = self.pipeline_registers['EX/MEM'].data.get('ALUResult')
+            aluResult = self.pipeline_registers['EX/MEM'].get_data()
             destRegister = self.pipeline_registers['EX/MEM'].registers.get('DestinationRegister')
 
             if takeBranch and aluResult == 0:
                 self.PC_word = self.pipeline_registers['EX/MEM'].data.get('BranchTarget')
 
+            #進入這個迴圈代表有lw
             if memRead:
                 read_address = aluResult
-                self.pipeline_registers['MEM/WB'].data['ReadData'] = self.memory.get_data_memory(read_address)
+                #將ALU的結果暫時放進MEM/WB的'ReadData'裡
+                self.pipeline_registers['MEM/WB'].data['MemReadData'] = self.memory.get_data_memory(read_address)
 
             if memWrite:
                 write_address = aluResult
-                write_data = self.pipeline_registers['EX/MEM'].data.get('WriteData')
+                write_data = self.pipeline_registers['EX/MEM'].data.get('MemWriteData')
                 self.memory.set_data_memory(write_address, write_data)
 
             self.pipeline_registers['MEM/WB'].registers['DestinationRegister'] = destRegister
