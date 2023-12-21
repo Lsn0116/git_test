@@ -6,7 +6,11 @@ import compiler
 r = reader.Reader("memory.txt")
 ins_memory = r.get_ins_memory() #('instruction', ['rs, rt, rd'] ) ex: ('add', ['$1, $2, $3'])
 #simulate pipeline
-c = compiler.Compiler(ins_memory)
+# for i in range(len(ins_memory)):
+#     print(ins_memory[i][1]) #instruction
+
+c=compiler.Compiler(ins_memory)
+c.compile()
 #output statistics
 #we need count of cycles, and what happens in each cycle
 #(what stage each instruction is in,and what control signals are asserted) 

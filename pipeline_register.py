@@ -1,11 +1,10 @@
-#class PipelineRegister:
-#data(values)
-#registers
-#control signals
-#instruction name
-#write (write to the pipeline register)
+# class PipelineRegister:
+# data(values)
+# registers
+# control signals
+# instruction name
+# write (write to the pipeline register)
 class PipelineRegister:
-
     def __init__(self):
         self.name = "" #name of instruction
         self.data :int #data values (after ALU operation)
@@ -16,6 +15,9 @@ class PipelineRegister:
     def set_name(self, name):
         self.name = name
     
+    def get_name(self):
+        return self.name
+
     def set_data(self, data):
         self.data = data
     
@@ -30,8 +32,11 @@ class PipelineRegister:
 
     def set_write(self, write):
         self.write = write
-    
-    #each stage may need to remove the control signals that it already need
+
+    def get_write(self):
+        return self.write
+
+    # each stage may need to remove the control signals that it already need
     def remove_control_signals(self, control_signals):
         for signal in control_signals:
             if signal in self.control_signals:
@@ -39,5 +44,8 @@ class PipelineRegister:
 
     def add_data(self, key, value):
         self.data[key] = value
-    
-    
+    def get_register(self):
+        return self.registers
+
+    def get_one_register(self, i):
+        return self.registers[i]

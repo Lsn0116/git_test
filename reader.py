@@ -9,7 +9,7 @@ class Reader:
             self.lines.append(line.strip())
         self.file.close()
         self.ins_memory = self.parse_instructions()
-
+    #self.line[]=["lw $2,8($0)", "lw $3,16($0)]
     # parse the instructions 
     def parse_instructions(self):
         # parse the instructions
@@ -20,7 +20,7 @@ class Reader:
             # get the instruction
             instruction = line[0]
             # get the rest of the line
-            rest = line[1:]
+            rest = line[1]
             # add the instruction and the rest to the instructions
             instructions.append([instruction, rest])
         # return the instructions

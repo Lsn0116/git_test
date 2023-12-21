@@ -4,8 +4,9 @@
 class RegisterFile:
     def __init__(self):
         self.register_values = {}
-        self.initialize_register_values()
         self.register_names = ['$0','$1','$2','$3','$4','$5','$6','$7','$8','$9','$10','$11','$12','$13','$14','$15','$16','$17','$18','$19','$20','$21','$22','$23','$24','$25','$26','$27','$28','$29','$30','$31']
+        self.initialize_register_values()
+        
     def initialize_register_values(self):
         for i in range(32):
             self.register_values[self.register_names[i]] = 1
@@ -35,7 +36,7 @@ class Memory:
     def get_data_memory(self,i):
         return self.data_memory['w'+str(i)]
     
-    def get_instruction_memory(self,i):
+    def get_ins_memory(self,i):
         return self.instruction_memory[i]
     
     def set_data_memory(self, address, value):
