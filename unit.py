@@ -3,13 +3,13 @@ import pipeline_register as pr
 class ControlUnit:
     
     def __init__(self):
-        RegDst:str = '0'
-        ALUSrc:str = '0'
-        Branch:str = '0'
-        MemRead:str = '0'
-        MemWrite:str = '0'
-        RegWrite:str = '0'
-        MemToReg:str = '0'
+        self.RegDst:str = '0'
+        self.ALUSrc:str = '0'
+        self.Branch:str = '0'
+        self.MemRead:str = '0'
+        self.MemWrite:str = '0'
+        self.RegWrite:str = '0'
+        self.MemToReg:str = '0'
 
     def set_control_signals(self, instruction):
         if instruction == 'lw':
