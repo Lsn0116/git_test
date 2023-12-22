@@ -11,6 +11,7 @@ class PipelineRegister:
         self.control_signals = {}  # control signals
         self.registers = {}  # registers
         self.write = 1  # write to the pipeline register 1 = yes, 0 = no
+        self.stall = 0
 
     def set_name(self, name):
         self.name = name
@@ -44,7 +45,29 @@ class PipelineRegister:
         return self.registers
 
     def get_one_register(self, i):
-        return self.registers[i]
+        if i in self.registers:
+            return self.registers[i]
+        else:
+            return None
     #-------new def------------------
     def get_control_signals(self):
         return self.control_signals
+    def set_stall(self):
+        self.stall = 1
+    
+    def get_stall(self):
+        return self.stall
+    
+    def clear(self):
+        self.name = ""
+        self.data = 0
+        self.control_signals = {}
+        self.registers = {}
+        self.write = 1
+        self.stall = 0
+    def IsEmpty(self):
+        if self.name == "":
+            return True
+        else:
+            return False
+
