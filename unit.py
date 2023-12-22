@@ -110,7 +110,7 @@ class ForwardingUnit:
 class ForwardingUnit:
     #in ID stage
 
-    def __init__(self,this_instruction:pr.PipelineRegister(), last_instruction:pr.PipelineRegister(), second_last_instruction:pr.PipelineRegister()):
+    def __init__(self,this_instruction:pr.PipelineRegister(), last_instruction:pr.PipelineRegister(), second_last_instruction:pr.PipelineRegister()): 
         self.this_instruction = this_instruction
         self.last_instruction = last_instruction
         self.second_last_instruction = second_last_instruction

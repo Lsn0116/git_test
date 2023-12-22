@@ -10,7 +10,8 @@ ins_memory = r.get_ins_memory() #('instruction', ['rs, rt, rd'] ) ex: ('add', ['
 #     print(ins_memory[i][1]) #instruction
 
 c=compiler.Compiler(ins_memory)
-c.compile()
+c.test_Mem_stage()
+#c.compile()
 #output statistics
 #we need count of cycles, and what happens in each cycle
 #(what stage each instruction is in,and what control signals are asserted) 
