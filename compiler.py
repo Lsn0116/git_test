@@ -141,13 +141,13 @@ class Compiler:
         pass
 
     def MEM_stage(self):
-        if self.pipeline_registers['EX/MEM'].write:
+        if self.pipeline_registers['EX/MEM'].get_write() == 1:
             takeBranch = self.pipeline_registers['EX/MEM'].control_signals.get('Branch')
             memRead = self.pipeline_registers['EX/MEM'].control_signals.get('MemRead')
             memWrite = self.pipeline_registers['EX/MEM'].control_signals.get('MemWrite')
-            aluResult = self.pipeline_registers['EX/MEM'].data.get('ALUResult')
+            aluResult = self.pipeline_registers['EX/MEM'].get_data()
             destRegister = self.pipeline_registers['EX/MEM'].registers.get('DestinationRegister')
-
+            
             if takeBranch and aluResult == 0:
                 self.PC_word = self.pipeline_registers['EX/MEM'].data.get('BranchTarget')
 
