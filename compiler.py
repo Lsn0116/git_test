@@ -190,3 +190,15 @@ class Compiler:
         self.WB_over = True
         pass
 
+    def test_MEM_stage(self):
+            
+            self.pipeline_registers['EX/MEM'].data['ALUResult'] = 42 
+            self.pipeline_registers['EX/MEM'].registers['DestinationRegister'] = '$t0' 
+            self.pipeline_registers['EX/MEM'].registers['rt_value'] = 10  
+            self.MEM_stage()
+
+            print("After MEM stage:")
+            print("Memory Write Address:", self.pipeline_registers['MEM/WB'].data.get('WriteAddress'))
+            print("Memory Write Data:", self.pipeline_registers['MEM/WB'].data.get('WriteData'))
+            print("Destination Register:", self.pipeline_registers['MEM/WB'].registers.get('DestinationRegister'))
+    
