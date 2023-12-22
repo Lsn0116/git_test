@@ -159,8 +159,9 @@ class Compiler:
                 self.memory.set_data_memory(write_address, write_data)
 
     def WB_stage(self):
-        #check MemToReg -- if 1 then write the data from the memory to the register file, if 0 then write the data from the ALU to the register file
-        #but we just write the data to the register file in MEM stage cause in MEM stage we already replace the data
+        ###TODO:
+            #check MemToReg -- if 1 then write the data from the memory to the register file, if 0 then write the data from the ALU to the register file
+            #but we just write the data to the register file in MEM stage cause in MEM stage we already replace the data
         
         #check pipleline register MEM/WB can write or not
         if self.pipeline_registers['MEM/WB'].write:
@@ -169,14 +170,7 @@ class Compiler:
             if data_to_write is not None and self.pipeline_registers['MEM/WB'].control_signals.get('RegWrite'):
                 destination_register = self.pipeline_registers['MEM/WB'].registers.get('DestinationRegister')
                 self.register_file.set_register_value(destination_register, data_to_write)
-
-        self.pipeline_registers['MEM/WB'].write = 0
-        self.pipeline_registers['MEM/WB'].data.clear()
-        self.pipeline_registers['MEM/WB'].registers.clear()
-        self.pipeline_registers['MEM/WB'].control_signals.clear()
-
-        self.WB_over = True
-        pass
+                
 
     def test_MEM_stage(self):
             
