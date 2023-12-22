@@ -79,10 +79,6 @@ class HazardDetectionUnit:
             return True
         elif(self.ins_name == 'lw' and self.rt == self.next_rt and (self.next_name != 'lw' or self.next_name != 'sw')):
             return True
-        elif(self.ins_name == 'sw' and self.rt == self.next_rs):
-            return True
-        elif(self.ins_name == 'sw' and self.rt == self.next_rt and (self.next_name != 'lw' or self.next_name != 'sw')):
-            return True
         else:
             return False
         
