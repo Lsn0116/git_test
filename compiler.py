@@ -141,37 +141,27 @@ class Compiler:
         pass
 
     def MEM_stage(self):
+        #decide to do load or store
         if self.pipeline_registers['EX/MEM'].get_write() == 1:
-            takeBranch = self.pipeline_registers['EX/MEM'].control_signals.get('Branch')
-            memRead = self.pipeline_registers['EX/MEM'].control_signals.get('MemRead')
-            memWrite = self.pipeline_registers['EX/MEM'].control_signals.get('MemWrite')
-            aluResult = self.pipeline_registers['EX/MEM'].get_data()
-            destRegister = self.pipeline_registers['EX/MEM'].registers.get('DestinationRegister')
-            
-            if takeBranch and aluResult == 0:
-                self.PC_word = self.pipeline_registers['EX/MEM'].data.get('BranchTarget')
+            memRead = self.pipeline_registers['EX/MEM'].get_control_signals().get('MemRead')
+            memWrite = self.pipeline_registers['EX/MEM'].get_control_signals().get('MemWrite')
+            aluResult = self.pipeline_registers['EX/MEM'].get_data() #not this, it would be 'w1' or something like this
 
-            if memRead:
+            if memRead: #load
                 read_address = aluResult
-                self.pipeline_registers['MEM/WB'].data['ReadData'] = self.memory.get_data_memory(read_address)
+                self.pipeline_registers['MEM/WB'].set_data(self.memory.get_data_memory(read_address))
+                #in WB stage, write the data to the register file
 
-            if memWrite:
+            if memWrite: #store
                 write_address = aluResult
-                write_data = self.pipeline_registers['EX/MEM'].data.get('WriteData')
+                rt = self.pipeline_registers['EX/MEM'].get_one_register('rt')
+                write_data = self.register_file.get_register_value(rt)
                 self.memory.set_data_memory(write_address, write_data)
 
-            self.pipeline_registers['MEM/WB'].registers['DestinationRegister'] = destRegister
-
-        self.pipeline_registers['EX/MEM'].write = 0
-        self.pipeline_registers['EX/MEM'].data.clear()
-        self.pipeline_registers['EX/MEM'].registers.clear()
-        self.pipeline_registers['EX/MEM'].control_signals.clear()
-
-        self.MEM_over = True
-
-        pass
-
     def WB_stage(self):
+        #check MemToReg -- if 1 then write the data from the memory to the register file, if 0 then write the data from the ALU to the register file
+        #but we just write the data to the register file in MEM stage cause in MEM stage we already replace the data
+        
         #check pipleline register MEM/WB can write or not
         if self.pipeline_registers['MEM/WB'].write:
             #get the data from the pipeline register that already calculated
