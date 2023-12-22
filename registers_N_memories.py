@@ -8,8 +8,9 @@ class RegisterFile:
         self.initialize_register_values()
         
     def initialize_register_values(self):
-        for i in range(32):
+        for i in range(1,32):
             self.register_values[self.register_names[i]] = 1
+        self.register_values[self.register_names[0]] = 0
     
     def get_register_value(self, register_name):
         return self.register_values[register_name]
@@ -48,3 +49,5 @@ class Memory:
     #------------new def--------------------------------------------------
     def get_all_ins_memory(self):
         return self.instruction_memory
+    def get_data_memory_withW(self,i):
+        return self.data_memory[i]

@@ -1,4 +1,5 @@
 import pipeline_register as pr
+
 #a class to simulate the control unit 
 class ControlUnit:
     
@@ -65,7 +66,7 @@ class ForwardingUnit:
     #in ID stage
 
     def __init__(self):
-        self.this_instruction:pr.PipelineRegister
+        '''self.this_instruction:pr.PipelineRegister
         self.last_instruction:pr.PipelineRegister
         self.second_last_instruction:pr.PipelineRegister
         self.rs =''
@@ -73,30 +74,69 @@ class ForwardingUnit:
         self.last_rd=''
         self.last_rt=''
         self.second_last_rd='' 
-        self.second_last_rt=''
+        self.second_last_rt='''''
+        self.ins_name = ''
+        self.last_name = ''
+        self.second_last_name = ''
+        self.rt = ''
+        self.rs = ''
+        self.last_rd = ''
+        self.last_rt = ''
+        self.second_last_rd = ''
+        self.second_last_rt = ''
+        self.forwarding_type =''
     
-    def set(self, this_instruction, last_instruction, second_last_instruction):
-        self.this_instruction = this_instruction
-        self.last_instruction = last_instruction
-        self.second_last_instruction = second_last_instruction
-        self.rs = self.this_instruction.get_one_register('rs')
+    
+    def set(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister, second_last_instruction:pr.PipelineRegister):
+        self.ins_name = this_instruction.get_name()
         self.rt = this_instruction.get_one_register('rt')
+        self.rs = this_instruction.get_one_register('rs')
         self.last_rd = last_instruction.get_one_register('rd')
         self.last_rt = last_instruction.get_one_register('rt')
         self.second_last_rd = second_last_instruction.get_one_register('rd')
         self.second_last_rt = second_last_instruction.get_one_register('rt')
-        
-    
+
     def checkForwarding(self):
     #check rd is the same as ID/EX.rt or ID/EX.rs and EX/MEM.rt or EX/MEM.rs
     #if yes then forward(replace the value of the register with the value in the pipeline register)
-        if(self.second_last_rd!='' and (self.last_rd == self.rs or self.last_rd == self.rt)):
-            return True    
-        elif(self.last_rt != '' and (self.last_rt == self.rs or self.last_rt == self.rt)):
-            return True
-        elif(self.second_last_rd != '' and (self.second_last_rd == self.rs or self.second_last_rd == self.rt)):
-            return True
-        elif(self.second_last_rt != '' and (self.second_last_rt == self.rs or self.second_last_rt == self.rt)):
-            return True
-        
-        
+    
+        #R-format
+        #forwarding type:(EX_rt:從EX/MEM讀取data給rt,EX_rs:從EX/MEM讀取data給rs, MEM_rt:從MEM/WB讀取data給rt, MEM_rs:從MEM/WB讀取data給rs)
+        if(self.ins_name == 'add' or self.ins_name == 'sub'):
+            
+            if(self.rt==self.last_rd):
+                self.forwarding_type = 'EX_rt' #EX hazrad
+            elif(self.rs==self.last_rd):
+                self.forwarding_type='EX_rs'
+            elif(self.rt==self.second_last_rd):
+                self.forwarding_type = 'MEM_rt' #MEM hazrad
+            elif(self.rs==self.second_last_rd):
+                self.forwarding_type = 'MEM_rs'
+            else:
+                print("no forwarding")
+
+        #I-format
+        elif(self.ins_name == 'lw' or self.ins_name == 'sw'):
+            if(self.rt==self.last_rd):
+                self.forwarding_type = 'EX_rt'
+            elif(self.rt==self.second_last_rd):
+                self.forwarding_type = 'MEM_rt'
+            else:
+                print("no forwarding")
+
+    def checkForwarding_branch(self):
+         if(self.ins_name == 'beq'):
+            if(self.rt==self.last_rd):
+                self.forwarding_type = 'EX_rt' #EX hazrad
+            elif(self.rs==self.last_rd):
+                self.forwarding_type='EX_rs'
+            elif(self.rt==self.second_last_rd):
+                self.forwarding_type = 'MEM_rt' #MEM hazrad
+            elif(self.rs==self.second_last_rd):
+                self.forwarding_type = 'MEM_rs'
+            else:
+                print("no forwarding")
+
+
+            
+    
