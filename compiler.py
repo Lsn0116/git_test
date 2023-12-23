@@ -109,6 +109,11 @@ class Compiler:
         #     self.instructions.append([instruction, rest])
         #     #increment the PC (word)
         #     self.PC_word += 1
+
+         #刪除control signal
+        drop_controlSignal = ['MemRead', 'MemWrite', 'RegWrite', 'MemToReg']
+        self.pipeline_registers['IF/ID'].remove_control_signals(drop_controlSignal)
+        
         pass
 
     def ID_stage(self, prp):
@@ -132,12 +137,20 @@ class Compiler:
         if(self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt)):
             self.PC_word += self.pipeline_registers['IF/ID'].get_one_register('immediate')
             return
+         #刪除control signal
+        drop_controlSignal = ['MemRead', 'MemWrite', 'MemToReg']
+        self.pipeline_registers['ID/EX'].remove_control_signals(drop_controlSignal)
+        
         pass
 
     def EX_stage(self):
         # check ALUSrc
         # calculate the ALU result
         # add the ALU result to the EX/MEM pipeline register
+         #刪除control signal
+        drop_controlSignal = ['MemRead', 'MemWrite', 'RegWrite', 'MemToReg']
+        self.pipeline_registers['EX/MEM'].remove_control_signals(drop_controlSignal)
+        
         pass
 
     def MEM_stage(self):
@@ -158,6 +171,11 @@ class Compiler:
                 write_data = self.register_file.get_register_value(rt)
                 self.memory.set_data_memory(write_address, write_data)
 
+        #刪除control signal
+        drop_controlSignal = ['MemToReg']
+        self.pipeline_registers['MEM/WB'].remove_control_signals(drop_controlSignal)
+            
+
     def WB_stage(self):
         ###TODO:
             #check MemToReg -- if 1 then write the data from the memory to the register file, if 0 then write the data from the ALU to the register file
@@ -170,6 +188,11 @@ class Compiler:
             if data_to_write is not None and self.pipeline_registers['MEM/WB'].control_signals.get('RegWrite'):
                 destination_register = self.pipeline_registers['MEM/WB'].registers.get('DestinationRegister')
                 self.register_file.set_register_value(destination_register, data_to_write)
+
+        #刪除control signal
+        drop_controlSignal = []
+        self.pipeline_registers['WB'].remove_control_signals(drop_controlSignal)
+        
                 
 
     def test_MEM_stage(self):
