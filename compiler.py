@@ -165,7 +165,7 @@ class Compiler:
         pass
 
     def EX_stage(self):
-        
+        #if branch taken then ID clear and IF refetch in next cycle
         print("---------EX-----------------")
         #check forwarding
         #self.pipeline_registers["EX/MEM"].set_registers ({"rs": '$1',"rt": '$2',"rd":'$4' })#test
