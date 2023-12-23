@@ -72,6 +72,7 @@ class ForwardingUnit:
         self.last_rt=''
         self.second_last_rd='' 
         self.second_last_rt=''
+        self.forwarded_data = None
     
     def set(self, this_instruction, last_instruction, second_last_instruction):
         self.this_instruction = this_instruction
@@ -106,6 +107,10 @@ class ForwardingUnit:
         self.second_last_rd = '' #EX/MEM.rd
         self.second_last_rt = '' #EX/MEM.rt
 
+    #new function------------------------------------------    
+    def get_forwarded_data(self):
+        return self.forwarded_data
+
 
 class ForwardingUnit:
     #in ID stage
@@ -133,5 +138,9 @@ class ForwardingUnit:
             return True
         elif(self.second_last_rt != '' and (self.second_last_rt == self.rs or self.second_last_rt == self.rt)):
             return True
+        
+     #new function------------------------------------------    
+    def get_forwarded_data(self):
+        return self.forwarded_data    
         
         

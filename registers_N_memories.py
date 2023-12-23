@@ -45,3 +45,8 @@ class Memory:
     def print_data_memory(self):
         for i in range(32):
             print('w'+str(i)+': '+str(self.data_memory['w'+str(i)]))
+    #------------new def--------------------------------------------------
+    def get_all_ins_memory(self):
+        return self.instruction_memory
+    def get_data_memory_withW(self,i):
+        return self.data_memory[i]
