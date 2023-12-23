@@ -1,4 +1,5 @@
 import pipeline_register as pr
+import registers_N_memories as rnm
 
 #a class to simulate the control unit 
 class ControlUnit:
@@ -85,9 +86,14 @@ class ForwardingUnit:
         self.second_last_rd = ''
         self.second_last_rt = ''
         self.forwarding_type =''
+
+        self.rs_value = ''
+        self.rt_value = ''
+        self.last_data = ''
+        self.second_last_data = ''
     
     
-    def set(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister, second_last_instruction:pr.PipelineRegister):
+    def set(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister, second_last_instruction:pr.PipelineRegister,rs_value,rt_value):
         self.ins_name = this_instruction.get_name()
         self.rt = this_instruction.get_one_register('rt')
         self.rs = this_instruction.get_one_register('rs')
@@ -95,26 +101,35 @@ class ForwardingUnit:
         self.last_rt = last_instruction.get_one_register('rt')
         self.second_last_rd = second_last_instruction.get_one_register('rd')
         self.second_last_rt = second_last_instruction.get_one_register('rt')
+        self.last_data = last_instruction.get_data()
+        self.second_last_data = second_last_instruction.get_data()
+        self.rs_value=rs_value
+        self.rt_value=rt_value
 
-    def checkForwarding(self):
+    def checkForwarding(self, ALUSrc):
     #check rd is the same as ID/EX.rt or ID/EX.rs and EX/MEM.rt or EX/MEM.rs
     #if yes then forward(replace the value of the register with the value in the pipeline register)
     
         #R-format
         #forwarding type:(EX_rt:從EX/MEM讀取data給rt,EX_rs:從EX/MEM讀取data給rs, MEM_rt:從MEM/WB讀取data給rt, MEM_rs:從MEM/WB讀取data給rs)
-        if(self.ins_name == 'add' or self.ins_name == 'sub'):
+        if ALUSrc == '0':
+            #rt
+            if(self.rt==self.last_rd):   #EX hazrad
+                self.rt_value = self.last_data
+            elif(self.rt==self.second_last_rd):     #MEM hazrad(R-format)
+                self.rt_value = self.second_last_data
+            elif(self.rt==self.second_last_rt and self.second_last_rd == ''):#MEM hazrad(I-format)
+                self.rt_value = self.second_last_data
             
-            if(self.rt==self.last_rd):
-                self.forwarding_type = 'EX_rt' #EX hazrad
-            elif(self.rs==self.last_rd):
-                self.forwarding_type='EX_rs'
-            elif(self.rt==self.second_last_rd):
-                self.forwarding_type = 'MEM_rt' #MEM hazrad
-            elif(self.rs==self.second_last_rd):
-                self.forwarding_type = 'MEM_rs'
-            else:
-                print("no forwarding")
-
+            #rs
+            if(self.rs==self.last_rd):  #EX hazrad
+                self.rs_value = self.last_data
+            elif(self.rs==self.second_last_rd): #MEM hazrad(R-format)
+                self.rs_value = self.second_last_data
+            elif(self.rs==self.second_last_rt and self.second_last_rd == ''):    #MEM hazrad(I-format)
+                self.rs_value = self.second_last_data
+            
+            '''
         #I-format
         elif(self.ins_name == 'lw' or self.ins_name == 'sw'):
             if(self.rt==self.last_rd):
@@ -122,20 +137,33 @@ class ForwardingUnit:
             elif(self.rt==self.second_last_rd):
                 self.forwarding_type = 'MEM_rt'
             else:
-                print("no forwarding")
+                print("no forwarding")'''
 
     def checkForwarding_branch(self):
-         if(self.ins_name == 'beq'):
-            if(self.rt==self.last_rd):
-                self.forwarding_type = 'EX_rt' #EX hazrad
-            elif(self.rs==self.last_rd):
-                self.forwarding_type='EX_rs'
-            elif(self.rt==self.second_last_rd):
-                self.forwarding_type = 'MEM_rt' #MEM hazrad
-            elif(self.rs==self.second_last_rd):
-                self.forwarding_type = 'MEM_rs'
-            else:
-                print("no forwarding")
+        #rt
+        if(self.rt==self.last_rd):   #EX hazrad
+             self.rt_value = self.last_data
+        elif(self.rt==self.second_last_rd):     #MEM hazrad(R-format)
+                self.rt_value = self.second_last_data
+        elif(self.rt==self.second_last_rt and self.second_last_rd == ''):#MEM hazrad(I-format)
+                self.rt_value = self.second_last_data
+            
+        #rs
+        if(self.rs==self.last_rd):  #EX hazrad
+            self.rs_value = self.last_data
+        elif(self.rs==self.second_last_rd): #MEM hazrad(R-format)
+            self.rs_value = self.second_last_data
+        elif(self.rs==self.second_last_rt and self.second_last_rd == ''):    #MEM hazrad(I-format)
+            self.rs_value = self.second_last_data
+
+    def get_rt_value(self):
+        return self.rt_value
+
+    def get_rs_value(self):
+        return self.rs_value
+        
+
+    
 
 
             

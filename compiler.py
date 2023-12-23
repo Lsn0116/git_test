@@ -169,127 +169,46 @@ class Compiler:
         print("---------EX-----------------")
         #check forwarding
         #self.pipeline_registers["EX/MEM"].set_registers ({"rs": '$1',"rt": '$2',"rd":'$4' })#test
-        self.forwarding_unit.set(self.pipeline_registers["ID/EX"], self.pipeline_registers["EX/MEM"], self.pipeline_registers["MEM/WB"])
-        self.forwarding_unit.checkForwarding()
-        
-        #從ID/EX讀取指令名稱name，指令registers，判斷指令名稱為R-format或I-format
         rs = self.pipeline_registers["ID/EX"].get_one_register('rs')
-        rt = self.pipeline_registers["ID/EX"].get_one_register('rt')
-        rd = self.pipeline_registers["ID/EX"].get_one_register('rd')
-        immediate = self.pipeline_registers["ID/EX"].get_one_register('immediate')
-
         rs_value=self.register_file.get_register_value(rs)
+        rt = self.pipeline_registers["ID/EX"].get_one_register('rt')
         rt_value=self.register_file.get_register_value(rt)
-        #檢查data(add,sub)是運算結果還是address(lw,sw)
-        data_EM=0
-        data_MW=0 #1代表指令為整數 0代表指令字串('w1')
-        #self.pipeline_registers['EX/MEM'].set_data('w1')#test
-        if (self.forwarding_unit.forwarding_type=='EX_rt')|(self.forwarding_unit.forwarding_type=='EX_rs'):
-            if isinstance(self.pipeline_registers['EX/MEM'].get_data(),int):
-                data_EM=1
-        if (self.forwarding_unit.forwarding_type=='MEM_rt')|(self.forwarding_unit.forwarding_type=='MEM_rs'):
-            if isinstance(self.pipeline_registers['MEM/WB'].get_data(),int):
-                data_MW=1
+
+        self.forwarding_unit.set(self.pipeline_registers["ID/EX"], self.pipeline_registers["EX/MEM"], self.pipeline_registers["MEM/WB"],rs_value,rt_value)
+        ALUSrc = self.pipeline_registers["ID/EX"].get_one_control_signals('ALUSrc')
+        self.forwarding_unit.checkForwarding(ALUSrc)
+        
         
         #R-format指令
         #add 
         if(self.pipeline_registers["ID/EX"].get_name()=='add'):
-
-            #根據forwarding_type選擇要更改的值    
-            if(self.forwarding_unit.forwarding_type=='EX_rt'):
-                if(data_EM==1): #前面指令為add,sub
-                    rt_value=self.pipeline_registers['EX/MEM'].get_data()#data 為前一個指令的運算結果
-                else:           #前面指令為lw,sw
-                    rt_value=self.memory.get_data_memory_withW(self.pipeline_registers['EX/MEM'].get_data())
-            elif(self.forwarding_unit.forwarding_type=='EX_rs'):
-                if(data_EM==1):
-                    rs_value=self.pipeline_registers['EX/MEM'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rs_value=self.memory.get_data_memory_withW(self.pipeline_registers['EX/MEM'].get_data())
-                
-            elif(self.forwarding_unit.forwarding_type=='MEM_rt'):
-                if(data_MW==1):
-                    rt_value=self.pipeline_registers['MEM/WB'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rt_value=self.memory.get_data_memory_withW(self.pipeline_registers['MEM/WB'].get_data())
-               
-            elif(self.forwarding_unit.forwarding_type=='MEM_rs'):
-                if(data_MW==1):
-                    rs_value=self.pipeline_registers['MEM/WB'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rs_value=self.memory.get_data_memory_withW(self.pipeline_registers['MEM/WB'].get_data())
-               
             #運算完結果傳給EX/MEM(data)
-            self.pipeline_registers["EX/MEM"].set_data(rs_value + rt_value)
+            self.pipeline_registers["EX/MEM"].set_data(self.forwarding_unit.get_rs_value() + self.forwarding_unit.get_rt_value())
             #print(self.pipeline_registers["EX/MEM"].get_data())
             self.pipeline_registers["EX/MEM"].set_name('add') 
         #sub
         elif(self.pipeline_registers["ID/EX"].get_name()=='sub'):   
-            #根據forwarding_type選擇要更改的值    
-            if(self.forwarding_unit.forwarding_type=='EX_rt'):
-                if(data_EM==1):
-                    rt_value=self.pipeline_registers['EX/MEM'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rt_value=self.memory.get_data_memory_withW(self.pipeline_registers['EX/MEM'].get_data())
-            elif(self.forwarding_unit.forwarding_type=='EX_rs'):
-                if(data_EM==1):
-                    rs_value=self.pipeline_registers['EX/MEM'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rs_value=self.memory.get_data_memory_withW(self.pipeline_registers['EX/MEM'].get_data())
-                
-            elif(self.forwarding_unit.forwarding_type=='MEM_rt'):
-                if(data_MW==1):
-                    rt_value=self.pipeline_registers['MEM/WB'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rt_value=self.memory.get_data_memory_withW(self.pipeline_registers['MEM/WB'].get_data())
-               
-            elif(self.forwarding_unit.forwarding_type=='MEM_rs'):
-                if(data_MW==1):
-                    rs_value=self.pipeline_registers['MEM/WB'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rs_value=self.memory.get_data_memory_withW(self.pipeline_registers['MEM/WB'].get_data())
-
-            self.pipeline_registers["EX/MEM"].set_data(rt_value-rs_value)   
+            
+            self.pipeline_registers["EX/MEM"].set_data(self.forwarding_unit.get_rt_value() - self.forwarding_unit.get_rs_value())   
            # print(self.pipeline_registers["EX/MEM"].get_data())
             self.pipeline_registers["EX/MEM"].set_name('sub')
+
         #I-format指令
-        #lw
-        elif(self.pipeline_registers["ID/EX"].get_name()=='lw'):
+        #從ID/EX讀取指令名稱若為lw或sw則讀取immediate
+        if self.pipeline_registers['ID/EX'].get_name()=='lw'|self.pipeline_registers['ID/EX'].get_name()=='sw':
+            immediate = self.pipeline_registers["ID/EX"].get_one_register('immediate')
+           
+
+        #lw,sw
+        elif self.pipeline_registers["ID/EX"].get_name()=='lw'|self.pipeline_registers["ID/EX"].get_name()=='sw':
          
-            #運算完結果傳給EX/MEM(data)
-
             #offset+rs_value (address=>int((immediate)//4)+self.register_file.get_register_value(rs) ex:w2)
-            self.pipeline_registers["EX/MEM"].set_data('w'+str((int(immediate)//4)+rs_value))
-            #print(self.pipeline_registers["EX/MEM"].get_data())
-
+            self.pipeline_registers["EX/MEM"].set_data('w'+str((int(immediate)//4)+self.forwarding_unit.get_rs_value()))
             self.pipeline_registers["EX/MEM"].set_name('lw')
            
-        #sw
-        elif(self.pipeline_registers["ID/EX"].get_name()=='sw'):
-
-            #根據forwarding_type選擇要更改的值    
-            #字串問題(data='w1')
-            if(self.forwarding_unit.forwarding_type=='EX_rt'):
-                if(data_MW==1):
-                    rt_value=self.pipeline_registers['EX/MEM'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rt_value=self.memory.get_data_memory_withW(rt_value=self.pipeline_registers['EX/MEM'].get_data())
-                
-            elif(self.forwarding_unit.forwarding_type=='MEM_rt'):
-                if(data_MW==1):
-                    rt_value=self.pipeline_registers['MEM/WB'].get_data()#data 為前一個指令的運算結果
-                else:
-                    rt_value=self.memory.get_data_memory_withW(self.pipeline_registers['MEM/WB'].get_data())
-            #運算完結果傳給EX/MEM(data)
-            self.pipeline_registers["EX/MEM"].set_data('w'+str((int(immediate)//4)+rs_value))
-            #print(self.pipeline_registers["EX/MEM"].get_data())
-
-            self.pipeline_registers["EX/MEM"].set_name('sw')
-
         else:
             print("instruction =beq")
        
-        
         
         # read data from the register file, and store the data to the EX/MEM pipeline register
         # check ALUSrc
