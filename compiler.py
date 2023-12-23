@@ -185,9 +185,14 @@ class Compiler:
         if self.pipeline_registers['MEM/WB'].write:
             #get the data from the pipeline register that already calculated
             data_to_write = self.pipeline_registers['MEM/WB'].get_data()
-            if data_to_write is not None and self.pipeline_registers['MEM/WB'].control_signals.get('RegWrite'):
-                destination_register = self.pipeline_registers['MEM/WB'].registers.get('DestinationRegister')
-                self.register_file.set_register_value(destination_register, data_to_write)
+            mem_to_reg = self.pipeline_registers['MEM/WB'].get_control_signals('MemToReg')
+            if mem_to_reg == 1:  
+                rd = self.pipeline_registers['MEM/WB'].get_one_register('rd')
+                self.register_file.set_register_value(rd, data_to_write)
+            #else:
+                
+
+
 
         #刪除control signal
         drop_controlSignal = []
