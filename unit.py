@@ -1,5 +1,4 @@
 import pipeline_register as pr
-import registers_N_memories as rnm
 
 #a class to simulate the control unit 
 class ControlUnit:

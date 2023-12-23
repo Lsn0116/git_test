@@ -54,6 +54,7 @@ class PipelineRegister:
         return self.control_signals
     def get_data(self):
         return self.data
+    
     def get_one_control_signals(self, i):
         if i in self.control_signals:
             return self.control_signals[i]

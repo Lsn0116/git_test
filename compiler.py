@@ -219,5 +219,6 @@ class Compiler:
     def MEM_stage(self):
         pass
 
+
     def WB_stage(self):
         pass
