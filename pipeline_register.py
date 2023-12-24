@@ -7,7 +7,7 @@
 class PipelineRegister:
     def __init__(self):
         self.name = ""  # name of instruction
-        self.data: int  # data values
+        self.data = 0   # data values
         self.control_signals = {}  # control signals
         self.registers = {}  # registers
         self.write = 1  # write to the pipeline register 1 = yes, 0 = no
@@ -70,4 +70,10 @@ class PipelineRegister:
             return True
         else:
             return False
-
+    def print_register(self):
+        print("name: ", self.name)
+        print("data: ", self.data)
+        print("control_signals: ", self.control_signals)
+        print("registers: ", self.registers)
+        print("write: ", self.write)
+        print("stall: ", self.stall)

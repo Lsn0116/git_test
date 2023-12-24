@@ -46,7 +46,6 @@ class HazardDetectionUnit:
     
     def __init__(self):
         self.ins_name = ''
-        self.last_name = ''
         self.second_last_name = ''
         self.next_name = ''
         self.rt = ''
@@ -54,8 +53,6 @@ class HazardDetectionUnit:
         self.next_rs = ''
         self.next_rt = ''
         self.last_rd = ''
-        self.last_rt = ''
-        self.second_last_rd = ''
         self.second_last_rt = ''
     #----new def----------
     def set_lw_sw(self, this_instruction:pr.PipelineRegister, next_instruction:pr.PipelineRegister):

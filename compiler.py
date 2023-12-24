@@ -45,6 +45,8 @@ class Compiler:
         # compile the instructions until finished the all instructions
 
         while self.PC_word < len(self.memory.get_all_ins_memory()):
+            MW = self.MEM_stage()
+            EM = self.EX_stage()
             DE = self.ID_stage()
             FD = self.IF_stage()
             # self.IF_stage()
@@ -58,11 +60,25 @@ class Compiler:
                 self.pipeline_registers["IF/ID"] = FD
             if self.pipeline_registers["ID/EX"].get_write() == 1:
                 self.pipeline_registers["ID/EX"] = DE
+            if self.pipeline_registers["EX/MEM"].get_write() == 1:
+                self.pipeline_registers["EX/MEM"] = EM
+            if self.pipeline_registers["MEM/WB"].get_write() == 1:
+                self.pipeline_registers["MEM/WB"] = MW
 
             for i in self.pipeline_registers:
-                if self.pipeline_registers[i].get_stall():
+                if self.pipeline_registers[i].get_stall() == 1:
                     self.pipeline_registers[i].clear()
                     continue
+
+            print("IF/ID")
+            print(self.pipeline_registers["IF/ID"].print_register())
+            print("ID/EX")
+            print(self.pipeline_registers["ID/EX"].print_register())
+            print("EX/MEM")
+            print(self.pipeline_registers["EX/MEM"].print_register())
+            print("MEM/WB")
+            print(self.pipeline_registers["MEM/WB"].print_register())
+            print("--------------------------------------------------")
             pass
 
         return
@@ -154,6 +170,7 @@ class Compiler:
 
     def ID_stage(self):
         print("---------ID-----------------")
+        self.pipeline_registers["IF/ID"].set_write(1)
         pipeline_register = pr.PipelineRegister()
         if self.pipeline_registers["IF/ID"].IsEmpty():
             return pipeline_register
@@ -171,7 +188,7 @@ class Compiler:
         if self.hazard_detection_unit.checkHazard_lw_sw():
             self.pipeline_registers["IF/ID"].set_write(0)
             pipeline_register.set_stall()
-            return
+            return pipeline_register
 
         # check RegDst(use the data self.control_unit.get_control_signals())
         # check branch (PC adder and reg compare(use the data stored in the pipeline register))
@@ -179,11 +196,12 @@ class Compiler:
         """if branch"""
         # need to use forwading unit
         if self.pipeline_registers["IF/ID"].get_name() == "beq":
-            stall = self.hazard_detection_unit.checkHazard_beq(
+            self.hazard_detection_unit.set_beq(
+                 self.pipeline_registers["IF/ID"],
                 self.pipeline_registers["ID/EX"],
                 self.pipeline_registers["EX/MEM"],
-                self.pipeline_registers["MEM/WB"],
             )
+            stall = self.hazard_detection_unit.checkHazard_beq()
             if stall:
                 self.pipeline_registers["IF/ID"].set_write(0)
                 pipeline_register.set_stall()
@@ -205,9 +223,9 @@ class Compiler:
             #     rt = self.forwarding_unit.get_rt_value()
 
             if self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt):
-                self.PC_word += self.pipeline_registers["IF/ID"].get_one_register(
+                pipeline_register.set_data(self.pipeline_registers["IF/ID"].get_one_register(
                     "immediate"
-                )
+                ))
         # IF/ID裡的值(ins,registers)傳給ID/EX
         pipeline_register.set_name(self.pipeline_registers["IF/ID"].get_name())
         pipeline_register.set_registers(self.pipeline_registers["IF/ID"].get_register())
@@ -216,6 +234,11 @@ class Compiler:
         return pipeline_register
 
     def EX_stage(self):
+        print("---------EX-----------------")
+        pipeline_register = pr.PipelineRegister()
+        if self.pipeline_registers["ID/EX"].IsEmpty():
+            return pipeline_register
+        return pipeline_register
         # if ID/EX pipeline register is empty then do nothing(cause stall is happened in ID stage)
         # forwading unit check what rs and rt need to be replaced or not
         # check ALUSrc
@@ -224,7 +247,11 @@ class Compiler:
         pass
 
     def MEM_stage(self):
-        pass
+        print("---------MEM-----------------")
+        pipeline_register = pr.PipelineRegister()
+        if self.pipeline_registers["EX/MEM"].IsEmpty():
+            return pipeline_register
+        return pipeline_register
 
     def WB_stage(self):
         pass
