@@ -48,3 +48,5 @@ class Memory:
     #------------new def--------------------------------------------------
     def get_all_ins_memory(self):
         return self.instruction_memory
+    def get_data_memory_withW(self,i):
+        return self.data_memory[i]

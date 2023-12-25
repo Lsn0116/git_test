@@ -112,6 +112,7 @@ class ForwardingUnit:
         self.last_rt=''
         self.second_last_rd='' 
         self.second_last_rt=''
+        self.forwarded_data = None
     
     def set(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister, second_last_instruction:pr.PipelineRegister):
         self.this_instruction = this_instruction
@@ -123,6 +124,13 @@ class ForwardingUnit:
         self.last_rt = last_instruction.get_one_register('rt')
         self.second_last_rd = second_last_instruction.get_one_register('rd')
         self.second_last_rt = second_last_instruction.get_one_register('rt')
+
+    def set_sw(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister):
+        self.this_name = this_instruction.get_name() #if this is sw
+        self.this_instruction = this_instruction
+        self.last_instruction = last_instruction
+        self.rt = this_instruction.get_one_register('rt')
+        self.last_rd = last_instruction.get_one_register('rd')
         
     
     def checkForwarding(self):
@@ -138,3 +146,20 @@ class ForwardingUnit:
             return True
         
         
+        self.rs = ''
+        self.rt = ''
+        self.rd = ''
+        self.last_rd = '' #ID/EX.rd
+        self.last_rt = '' #ID/EX.rt
+        self.second_last_rd = '' #EX/MEM.rd
+        self.second_last_rt = '' #EX/MEM.rt
+
+    #new function------------------------------------------    
+    def get_forwarded_data(self):
+        return self.forwarded_data
+
+    def checkForwarding_sw(self):
+        if (self.this_name == 'sw' and self.last_rd == self.rt):
+            return True
+        else:
+            return False

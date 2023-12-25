@@ -259,7 +259,70 @@ class Compiler:
         pipeline_register = pr.PipelineRegister()
         if self.pipeline_registers["EX/MEM"].IsEmpty():
             return pipeline_register
-        return pipeline_register
+        #decide to do load or store
+        if self.pipeline_registers['EX/MEM'].get_write() == 1:
+            memRead = self.pipeline_registers['EX/MEM'].get_control_signals().get('MemRead')
+            memWrite = self.pipeline_registers['EX/MEM'].get_control_signals().get('MemWrite')
+            aluResult = self.pipeline_registers['EX/MEM'].get_data() #not this, it would be 'w1' or something like this
+
+            # Forwarding 
+            self.forwarding_unit.set(self.pipeline_registers["ID/EX"], self.pipeline_registers["EX/MEM"], self.pipeline_registers["MEM/WB"])
+            self.forwarding_unit.checkForwarding()
+
+            if memRead: #load
+                read_address = aluResult
+                forwarded_data = self.forwarding_unit.get_forwarded_data()
+                if forwarded_data != None:
+                    self.pipeline_registers['MEM/WB'].set_data(forwarded_data)
+                else:
+                    self.pipeline_registers['MEM/WB'].set_data(self.memory.get_data_memory(read_address))
+                #in WB stage, write the data to the register file
+
+            if memWrite: #store
+                write_address = aluResult
+                rt = self.pipeline_registers['EX/MEM'].get_one_register('rt')
+                write_data = self.register_file.get_register_value(rt)
+                self.memory.set_data_memory(write_address, write_data)
+
+        #刪除control signal
+        drop_controlSignal = ['MemToReg']
+        self.pipeline_registers['MEM/WB'].remove_control_signals(drop_controlSignal)
+            
 
     def WB_stage(self):
-        pass
+        ###TODO:
+            #check MemToReg -- if 1 then write the data from the memory to the register file, if 0 then write the data from the ALU to the register file
+            #but we just write the data to the register file in MEM stage cause in MEM stage we already replace the data
+        
+        #check pipleline register MEM/WB can write or not
+        if self.pipeline_registers['MEM/WB'].get_write() == 1:
+            data_to_write = self.pipeline_registers['MEM/WB'].get_data()
+            mem_to_reg = self.pipeline_registers['MEM/WB'].get_control_signals('MemToReg')
+            #if mem_to_reg == 1:  
+                #check data_to_write is string or not
+            if isinstance(data_to_write, str):
+                data_to_write = self.memory.get_data_memory_withW(data_to_write)
+            rd = self.pipeline_registers['MEM/WB'].get_one_register('rd')
+            self.register_file.set_register_value(rd, data_to_write)
+            # else:
+            #     rd = self.pipeline_registers['MEM/WB'].get_one_register('rd')
+            #     self.register_file.set_register_value(rd, data_to_write)
+                
+        #刪除control signal
+        drop_controlSignal = []
+        self.pipeline_registers['WB'].remove_control_signals(drop_controlSignal)
+        
+                
+
+    def test_MEM_stage(self):
+            
+            self.pipeline_registers['EX/MEM'].data['ALUResult'] = 42 
+            self.pipeline_registers['EX/MEM'].registers['DestinationRegister'] = '$t0' 
+            self.pipeline_registers['EX/MEM'].registers['rt_value'] = 10  
+            self.MEM_stage()
+
+            print("After MEM stage:")
+            print("Memory Write Address:", self.pipeline_registers['MEM/WB'].data.get('WriteAddress'))
+            print("Memory Write Data:", self.pipeline_registers['MEM/WB'].data.get('WriteData'))
+            print("Destination Register:", self.pipeline_registers['MEM/WB'].registers.get('DestinationRegister'))
+    
