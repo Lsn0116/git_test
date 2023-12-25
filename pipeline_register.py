@@ -8,7 +8,7 @@ import registers_N_memories as rnm
 class PipelineRegister:
     def __init__(self):
         self.name = ""  # name of instruction
-        self.data: int | str  # data values
+        self.data: int | str  = 1 # data values
         self.control_signals = {}  # control signals
         self.registers = {}  # registers
         self.write = 1  # write to the pipeline register 1 = yes, 0 = no
@@ -39,10 +39,10 @@ class PipelineRegister:
         return self.write
 
     # each stage may need to remove the control signals that it already need
-    def remove_control_signals(self, control_signals):
+    def remove_control_signals(self, control_signals:list):
         for signal in control_signals:
             if signal in self.control_signals:
-                 del self.control_signals[control_signals]
+                 del self.control_signals[signal]
 
     def set_data(self, data):
         self.data = data
@@ -90,7 +90,7 @@ class PipelineRegister:
     
     def clear(self):
         self.name = ""
-        self.data = 0
+        self.data = 1
         self.control_signals = {}
         self.registers = {}
         self.write = 1
@@ -102,7 +102,8 @@ class PipelineRegister:
             return False
     def print_register(self):
         print("name: ", self.name)
-        print("data: ", self.data)
+        if self.control_signals != {}:
+            print("data: ", self.data)
         print("control_signals: ", self.control_signals)
         print("registers: ", self.registers)
         print("write: ", self.write)

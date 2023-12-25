@@ -20,7 +20,7 @@ class RegisterFile:
 
     def print_register_values(self):
         for i in range(32):
-            print(self.register_names[i] + str(self.register_values[self.register_names[i]]))
+            print(self.register_names[i] +': '+ str(self.register_values[self.register_names[i]]))
 
 class Memory:
     def __init__(self,ins_memory):
@@ -35,7 +35,7 @@ class Memory:
     def initialize_instruction_memory(self,ins_memory):
         self.instruction_memory = ins_memory
     def get_data_memory(self,i):
-        return self.data_memory['w'+str(i)]
+        return self.data_memory[i]
     
     def get_ins_memory(self,i):
         return self.instruction_memory[i]

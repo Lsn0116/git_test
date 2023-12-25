@@ -11,13 +11,6 @@ class ControlUnit:
         self.MemWrite:str = '0'
         self.RegWrite:str = '0'
         self.MemToReg:str = '0'
-        self.RegDst:str = '0'
-        self.ALUSrc:str = '0'
-        self.Branch:str = '0'
-        self.MemRead:str = '0'
-        self.MemWrite:str = '0'
-        self.RegWrite:str = '0'
-        self.MemToReg:str = '0'
 
     def set_control_signals(self, instruction):
         if instruction == 'lw':
@@ -40,6 +33,14 @@ class ControlUnit:
             self.Branch = '1'
             self.RegDst = 'X'
             self.MemToReg = 'X'
+    def clear_control_signals(self):
+        self.RegDst = '0'
+        self.ALUSrc = '0'
+        self.Branch = '0'
+        self.MemRead = '0'
+        self.MemWrite = '0'
+        self.RegWrite = '0'
+        self.MemToReg = '0'
 
     def get_control_signals(self):
         return {'RegDst':self.RegDst,'ALUSrc':self.ALUSrc, 'Branch':self.Branch, 'MemRead':self.MemRead, 'MemWrite':self.MemWrite, 'RegWrite':self.RegWrite, 'MemToReg':self.MemToReg}
@@ -142,12 +143,12 @@ class ForwardingUnit:
         self.rt_value=rt_value
 
     
-    def set_sw(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister):
+    def set_sw(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister,rt_value):
         self.this_name = this_instruction.get_name() #if this is sw
-        self.this_instruction = this_instruction
-        self.last_instruction = last_instruction
         self.rt = this_instruction.get_one_register('rt')
         self.last_rd = last_instruction.get_one_register('rd')
+        self.rt_value = rt_value
+        self.last_data = last_instruction.get_data()
     def checkForwarding(self, ALUSrc):
     #check rd is the same as ID/EX.rt or ID/EX.rs and EX/MEM.rt or EX/MEM.rs
     #if yes then forward(replace the value of the register with the value in the pipeline register)
@@ -196,13 +197,25 @@ class ForwardingUnit:
     def get_rs_value(self):
         return self.rs_value
         
-
-    
-
-
-            
-    
     def checkForwarding_sw(self):
-       if (self.this_name == 'sw' and self.last_rd == self.rt):
-           return True
-        
+        if (self.this_name == 'sw' and self.last_rd == self.rt):
+            
+            self.rt_value = self.last_data
+            print('sw hazard: ', self.rt_value)
+        return self.rt_value
+    
+    def clear(self):
+        self.ins_name = ''
+        self.last_name = ''
+        self.second_last_name = ''
+        self.rt = ''
+        self.rs = ''
+        self.last_rd = ''
+        self.last_rt = ''
+        self.second_last_rd = ''
+        self.second_last_rt = ''
+        self.forwarding_type =''
+        self.rs_value = ''
+        self.rt_value = ''
+        self.last_data = ''
+        self.second_last_data = ''

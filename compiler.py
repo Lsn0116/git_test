@@ -44,11 +44,16 @@ class Compiler:
        
         # compile the instructions until finished the all instructions
 
-        while self.PC_word < len(self.memory.get_all_ins_memory()):
+        while self.PC_word <= len(self.memory.get_all_ins_memory()):
+            self.WB_stage()
             MW = self.MEM_stage()
             EM = self.EX_stage()
             DE = self.ID_stage()
             FD = self.IF_stage()
+           
+            if self.PC_word == len(self.memory.get_all_ins_memory()):
+                if MW.IsEmpty() and EM.IsEmpty() and DE.IsEmpty() and FD.IsEmpty():
+                    break
             # self.IF_stage()
             # self.ID_stage()
             # WB stage
@@ -79,8 +84,9 @@ class Compiler:
             print("MEM/WB")
             print(self.pipeline_registers["MEM/WB"].print_register())
             print("--------------------------------------------------")
-            pass
 
+        self.memory.print_data_memory()
+        self.register_file.print_register_values()
         return
 
     """you may need some functions to help you to do the pipeline stages, add these to the pipeline register class (def xxxx(): )"""
@@ -88,9 +94,12 @@ class Compiler:
     def IF_stage(self):
         if self.pipeline_registers["IF/ID"].get_write() == 0:
             return
+       
         print("--------------------------IF stage------------------\n")
         # pc_word
         pipeline_register = pr.PipelineRegister()
+        if self.PC_word >= len(self.memory.get_all_ins_memory()):
+            return pipeline_register
         # print(self.memory.get_ins_memory(self.PC_word)[0])
         split_result = self.memory.get_ins_memory(self.PC_word)[1].split(",")
         if (
@@ -143,9 +152,8 @@ class Compiler:
 
         # self.pipeline_registers["IF/ID"].set_name(self.memory.get_ins_memory(self.PC_word)[0])
         pipeline_register.set_name(self.memory.get_ins_memory(self.PC_word)[0])
-        print(self.pipeline_registers["IF/ID"].get_name())
-        print(self.pipeline_registers["IF/ID"].get_register())
-
+        # print(self.pipeline_registers["IF/ID"].get_name())
+        # print(self.pipeline_registers["IF/ID"].get_register())
         self.PC_word += 1
         return pipeline_register
 
@@ -175,6 +183,8 @@ class Compiler:
         if self.pipeline_registers["IF/ID"].IsEmpty():
             return pipeline_register
         # decide the control signals for the ID/EX pipeline register
+        print("                   name: " + self.pipeline_registers["IF/ID"].get_name())
+        self.control_unit.clear_control_signals()
         self.control_unit.set_control_signals(
             self.pipeline_registers["IF/ID"].get_name()
         )
@@ -223,14 +233,11 @@ class Compiler:
             #     rt = self.forwarding_unit.get_rt_value()
 
             if self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt):
-                pipeline_register.set_data(self.pipeline_registers["IF/ID"].get_one_register(
-                    "immediate"
-                ))
+                pipeline_register.set_data(0)
         # IF/ID裡的值(ins,registers)傳給ID/EX
         pipeline_register.set_name(self.pipeline_registers["IF/ID"].get_name())
         pipeline_register.set_registers(self.pipeline_registers["IF/ID"].get_register())
-        # print(self.pipeline_registers["ID/EX"].get_name())
-        # print(self.pipeline_registers["ID/EX"].get_register())
+        pipeline_register.print_register()
         return pipeline_register
 
     def EX_stage(self):
@@ -255,6 +262,8 @@ class Compiler:
 
         self.forwarding_unit.set(self.pipeline_registers["ID/EX"], self.pipeline_registers["EX/MEM"], self.pipeline_registers["MEM/WB"],rs_value,rt_value)
         ALUSrc = self.pipeline_registers["ID/EX"].get_one_control_signals('ALUSrc')
+        if ALUSrc == '1':
+             immediate = self.pipeline_registers["ID/EX"].get_one_register('immediate')
         self.forwarding_unit.checkForwarding(ALUSrc)
         
         
@@ -268,22 +277,19 @@ class Compiler:
             pipeline_register.set_data(self.forwarding_unit.get_rt_value() - self.forwarding_unit.get_rs_value())
 
         #I-format指令
-        #從ID/EX讀取指令名稱若為lw或sw則讀取immediate
-        if self.pipeline_registers['ID/EX'].get_name()=='lw'|self.pipeline_registers['ID/EX'].get_name()=='sw':
-            immediate = self.pipeline_registers["ID/EX"].get_one_register('immediate')
-           
-        #lw,sw
-        elif self.pipeline_registers["ID/EX"].get_name()=='lw'|self.pipeline_registers["ID/EX"].get_name()=='sw':
-            
+        #lw or sw
+        if ALUSrc == '1':
             #offset+rs_value (address=>int((immediate)//4)+self.register_file.get_register_value(rs) ex:w2)
             pipeline_register.set_data('w'+str((int(immediate)//4)+self.forwarding_unit.get_rs_value()))
-            
-           
+            print("address: ",pipeline_register.get_data())
         else:
             print("wrong")
 
         pipeline_register.set_name(self.pipeline_registers["ID/EX"].get_name())
-       
+        pipeline_register.set_registers(self.pipeline_registers["ID/EX"].get_register())
+        pipeline_register.set_control_signals(self.pipeline_registers["ID/EX"].get_control_signals())
+        pipeline_register.remove_control_signals(['RegDst','ALUSrc'])
+        pipeline_register.print_register()
         return pipeline_register
         # read data from the register file, and store the data to the EX/MEM pipeline register
         # check ALUSrc
@@ -300,55 +306,77 @@ class Compiler:
             memRead = self.pipeline_registers['EX/MEM'].get_control_signals().get('MemRead')
             memWrite = self.pipeline_registers['EX/MEM'].get_control_signals().get('MemWrite')
             aluResult = self.pipeline_registers['EX/MEM'].get_data() #not this, it would be 'w1' or something like this
-
+            rt_value = self.register_file.get_register_value(self.pipeline_registers['EX/MEM'].get_one_register('rt'))
             # Forwarding 
-            self.forwarding_unit.set_sw(self.pipeline_registers["EX/MEM"], self.pipeline_registers["MEM/WB"])
-            self.forwarding_unit.checkForwarding_sw()
+            self.forwarding_unit.clear()
+            self.forwarding_unit.set_sw(self.pipeline_registers["EX/MEM"], self.pipeline_registers["MEM/WB"],rt_value)
+            rt_value = self.forwarding_unit.checkForwarding_sw()
+            
             
 
-            if memRead: #load
+            if memRead == '1': #load
                 read_address = aluResult
-                forwarded_data = self.forwarding_unit.get_forwarded_data()
-                if forwarded_data != None:
-                    self.pipeline_registers['MEM/WB'].set_data(forwarded_data)
-                else:
-                    self.pipeline_registers['MEM/WB'].set_data(self.memory.get_data_memory(read_address))
+                data = self.memory.get_data_memory(read_address)
+                pipeline_register.set_data(data)
+                pipeline_register.set_name(self.pipeline_registers["EX/MEM"].get_name())
+                pipeline_register.set_registers(self.pipeline_registers["EX/MEM"].get_register())
+                pipeline_register.set_control_signals(self.pipeline_registers["EX/MEM"].get_control_signals())
+                
                 #in WB stage, write the data to the register file
 
-            if memWrite: #store
+            elif memWrite == '1': #store
                 write_address = aluResult
-                rt = self.pipeline_registers['EX/MEM'].get_one_register('rt')
-                write_data = self.register_file.get_register_value(rt)
-                self.memory.set_data_memory(write_address, write_data)
-
-        #刪除control signal
-        drop_controlSignal = ['MemToReg']
-        self.pipeline_registers['MEM/WB'].remove_control_signals(drop_controlSignal)
+                self.memory.set_data_memory(write_address, rt_value)
+                pipeline_register.set_data(rt_value)
+                pipeline_register.set_name(self.pipeline_registers["EX/MEM"].get_name())
+                pipeline_register.set_registers(self.pipeline_registers["EX/MEM"].get_register())
+                pipeline_register.set_control_signals(self.pipeline_registers["EX/MEM"].get_control_signals())
             
+            else:
+                pipeline_register.set_name(self.pipeline_registers["EX/MEM"].get_name())
+                pipeline_register.set_registers(self.pipeline_registers["EX/MEM"].get_register())
+                pipeline_register.set_control_signals(self.pipeline_registers["EX/MEM"].get_control_signals())
+                pipeline_register.set_data(aluResult)
+
+            #刪除control signal
+        drop_controlSignal = ['MemRead','MemWrite','Branch']
+        pipeline_register.remove_control_signals(drop_controlSignal)
+        pipeline_register.print_register()
+        return pipeline_register    
 
 
     def WB_stage(self):
+        print("---------WB-----------------")
+        if self.pipeline_registers['MEM/WB'].IsEmpty():
+            return
         ###TODO:
             #check MemToReg -- if 1 then write the data from the memory to the register file, if 0 then write the data from the ALU to the register file
             #but we just write the data to the register file in MEM stage cause in MEM stage we already replace the data
         
         #check pipleline register MEM/WB can write or not
+        self.pipeline_registers['MEM/WB'].print_register()
         if self.pipeline_registers['MEM/WB'].get_write() == 1:
             data_to_write = self.pipeline_registers['MEM/WB'].get_data()
-            mem_to_reg = self.pipeline_registers['MEM/WB'].get_control_signals('MemToReg')
+            mem_to_reg = self.pipeline_registers['MEM/WB'].get_one_control_signals('MemToReg')
+            RegWrite = self.pipeline_registers['MEM/WB'].get_one_control_signals('RegWrite')
             #if mem_to_reg == 1:  
                 #check data_to_write is string or not
-            if isinstance(data_to_write, str):
-                data_to_write = self.memory.get_data_memory_withW(data_to_write)
-            rd = self.pipeline_registers['MEM/WB'].get_one_register('rd')
-            self.register_file.set_register_value(rd, data_to_write)
+            Dst=''
+            if RegWrite == '1':
+                if mem_to_reg == '1':
+                    if self.pipeline_registers['MEM/WB'].get_name() == 'lw':
+                        Dst = self.pipeline_registers['MEM/WB'].get_one_register('rt')
+                        
+                elif mem_to_reg != 'X':
+                    Dst = self.pipeline_registers['MEM/WB'].get_one_register('rd')   
+                if Dst != '':
+                    self.register_file.set_register_value(Dst, data_to_write)
+                if self.pipeline_registers['MEM/WB'].get_name() == 'add':
+                    self.register_file.print_register_values()
+                return
             # else:
             #     rd = self.pipeline_registers['MEM/WB'].get_one_register('rd')
             #     self.register_file.set_register_value(rd, data_to_write)
-                
-        #刪除control signal
-        drop_controlSignal = []
-        self.pipeline_registers['WB'].remove_control_signals(drop_controlSignal)
         
                 
 
