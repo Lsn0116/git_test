@@ -26,7 +26,6 @@ import unit
 
 class Compiler:
     def __init__(self, ins_memory):
-        
         self.register_file = rnm.RegisterFile()
         self.memory = rnm.Memory(ins_memory)
         self.control_unit = unit.ControlUnit()
@@ -42,55 +41,113 @@ class Compiler:
         
 
     def compile(self):
-        print("compile\n")
-        self.IF_stage()
-
+       
         # compile the instructions until finished the all instructions
-        """
-        while(self.PC_word < len(self.memory.get_instruction_memory())):
-            #WB stage
-            #MEM stage
-            #EX stage
-            #ID stage
-            #IF stage
+
+        while self.PC_word < len(self.memory.get_all_ins_memory()):
+            MW = self.MEM_stage()
+            EM = self.EX_stage()
+            DE = self.ID_stage()
+            FD = self.IF_stage()
+            # self.IF_stage()
+            # self.ID_stage()
+            # WB stage
+            # MEM stage
+            # EX stage
+            # ID stage
+            # IF stage
+            if self.pipeline_registers["IF/ID"].get_write() == 1:
+                self.pipeline_registers["IF/ID"] = FD
+            if self.pipeline_registers["ID/EX"].get_write() == 1:
+                self.pipeline_registers["ID/EX"] = DE
+            if self.pipeline_registers["EX/MEM"].get_write() == 1:
+                self.pipeline_registers["EX/MEM"] = EM
+            if self.pipeline_registers["MEM/WB"].get_write() == 1:
+                self.pipeline_registers["MEM/WB"] = MW
+
+            for i in self.pipeline_registers:
+                if self.pipeline_registers[i].get_stall() == 1:
+                    self.pipeline_registers[i].clear()
+                    continue
+
+            print("IF/ID")
+            print(self.pipeline_registers["IF/ID"].print_register())
+            print("ID/EX")
+            print(self.pipeline_registers["ID/EX"].print_register())
+            print("EX/MEM")
+            print(self.pipeline_registers["EX/MEM"].print_register())
+            print("MEM/WB")
+            print(self.pipeline_registers["MEM/WB"].print_register())
+            print("--------------------------------------------------")
             pass
 
         return
-        """
 
     """you may need some functions to help you to do the pipeline stages, add these to the pipeline register class (def xxxx(): )"""
 
     def IF_stage(self):
-
+        if self.pipeline_registers["IF/ID"].get_write() == 0:
+            return
         print("--------------------------IF stage------------------\n")
-        
+        # pc_word
+        pipeline_register = pr.PipelineRegister()
         # print(self.memory.get_ins_memory(self.PC_word)[0])
         split_result = self.memory.get_ins_memory(self.PC_word)[1].split(",")
-        if self.memory.get_ins_memory(self.PC_word)[0] == "lw" or self.memory.get_ins_memory(self.PC_word)[0] == "sw":
+        if (
+            self.memory.get_ins_memory(self.PC_word)[0] == "lw"
+            or self.memory.get_ins_memory(self.PC_word)[0] == "sw"
+        ):
             if len(split_result) == 2:
                 rt = split_result[0].strip()
                 temp = split_result[1].split("(")
                 immediate = temp[0].strip()
-                rs=temp[1].strip(")")
-               #check not stall
+                rs = temp[1].strip(")")
+                # check not stall
                 if self.pipeline_registers["IF/ID"].get_write() == 1:
-                    self.pipeline_registers["IF/ID"].set_registers({"rt": rt, "immediate": immediate, "rs": rs})
+                    # self.pipeline_registers["IF/ID"].set_registers({"rt": rt, "immediate": immediate, "rs": rs})
+                    pipeline_register.set_registers(
+                        {"rt": rt, "immediate": immediate, "rs": rs}
+                    )
                 # reg = self.pipeline_registers["IF/ID"].get_register()
                 # print(reg)  # {'rt': '$2', 'mem': '8', 'rs': '$0'}
 
-        elif (self.memory.get_ins_memory(self.PC_word)[0] == "add" or self.memory.get_ins_memory(self.PC_word)[0] == "sub"):
+        elif (
+            self.memory.get_ins_memory(self.PC_word)[0] == "add"
+            or self.memory.get_ins_memory(self.PC_word)[0] == "sub"
+        ):
             if len(split_result) == 3:
                 rd = split_result[0].strip()
                 rt = split_result[1].strip()
                 rs = split_result[2].strip()
                 if self.pipeline_registers["IF/ID"].get_write() == 1:
-                    self.pipeline_registers["IF/ID"].set_registers ({"rs": rs,"rt": rt,"rd": rd,})
+                    # self.pipeline_registers["IF/ID"].set_registers ({"rs": rs,"rt": rt,"rd": rd,})
+                    pipeline_register.set_registers(
+                        {
+                            "rs": rs,
+                            "rt": rt,
+                            "rd": rd,
+                        }
+                    )
                 # reg=self.pipeline_registers["IF/ID"].get_register()
                 # print(reg)  # {'rd': '$6', 'rt': '$4', 'rs': '$5'}
-        self.pipeline_registers["IF/ID"].set_name(self.memory.get_ins_memory(self.PC_word)[0])
+        elif self.memory.get_ins_memory(self.PC_word)[0] == "beq":
+            if len(split_result) == 3:
+                rt = split_result[0].strip()
+                rs = split_result[1].strip()
+                immediate = split_result[2].strip()
+                if self.pipeline_registers["IF/ID"].get_write() == 1:
+                    # self.pipeline_registers["IF/ID"].set_registers ({"rs": rs,"rt": rt,"immediate": immediate})
+                    pipeline_register.set_registers(
+                        {"rs": rs, "rt": rt, "immediate": immediate}
+                    )
+
+        # self.pipeline_registers["IF/ID"].set_name(self.memory.get_ins_memory(self.PC_word)[0])
+        pipeline_register.set_name(self.memory.get_ins_memory(self.PC_word)[0])
         print(self.pipeline_registers["IF/ID"].get_name())
         print(self.pipeline_registers["IF/ID"].get_register())
-       
+
+        self.PC_word += 1
+        return pipeline_register
 
         ###self.pipeline_registers['IF/ID'].set_name(self.instruction_memory[self.PC_word][0])
         # fetch the instruction from the instruction memory
@@ -111,37 +168,98 @@ class Compiler:
         #     self.PC_word += 1
         pass
 
-    def ID_stage(self, prp):
-        print("IF/ID name:" + prp.name + "\n")  # IF/ID 中的指令名稱
-        print("IF/ID register:")  # IF/ID 中的register
-        print(prp.get_register(prp))
-
-        #  print("\nIF/ID write"+self.write)
+    def ID_stage(self):
+        print("---------ID-----------------")
+        self.pipeline_registers["IF/ID"].set_write(1)
+        pipeline_register = pr.PipelineRegister()
+        if self.pipeline_registers["IF/ID"].IsEmpty():
+            return pipeline_register
         # decide the control signals for the ID/EX pipeline register
-        # read data from the register file, and store the data to the ID/EX pipeline register(if not stall and not forwarding and *branch?*)
-        # dazard detection unit
-        # forwarding unit
+        self.control_unit.set_control_signals(
+            self.pipeline_registers["IF/ID"].get_name()
+        )
+        pipeline_register.set_control_signals(self.control_unit.get_control_signals())
+        # print(self.pipeline_registers["ID/EX"].get_control_signals())#{'RegDst': '0', 'ALUSrc': '1', 'Branch': '0', 'MemRead': '1', 'MemWrite': '0', 'RegWrite': '1', 'MemToReg': '1'}
+
+        self.hazard_detection_unit.set_lw_sw(
+            self.pipeline_registers["ID/EX"], self.pipeline_registers["IF/ID"]
+        )
+        # detect hazard
+        if self.hazard_detection_unit.checkHazard_lw_sw():
+            self.pipeline_registers["IF/ID"].set_write(0)
+            pipeline_register.set_stall()
+            return pipeline_register
+
         # check RegDst(use the data self.control_unit.get_control_signals())
-        # check forwading here if needed, replace the value of the register with the value in the pipeline register(EX/MEM or MEM/WB)
-        # self.control_unit.set_control_signals(self.pipeline_registers['IF/ID'].name)
-        # C_S = self.control_unit.get_control_signals()
-        # self.pipeline_registers['ID/EX'].set_control_signals(C_S)
         # check branch (PC adder and reg compare(use the data stored in the pipeline register))
-        rs = self.pipeline_registers['IF/ID'].get_one_register('rs')
-        rt = self.pipeline_registers['IF/ID'].get_one_register('rt')
-        if(self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt)):
-            self.PC_word += self.pipeline_registers['IF/ID'].get_one_register('immediate')
-            return
-        pass
+
+        """if branch"""
+        # need to use forwading unit
+        if self.pipeline_registers["IF/ID"].get_name() == "beq":
+            self.hazard_detection_unit.set_beq(
+                 self.pipeline_registers["IF/ID"],
+                self.pipeline_registers["ID/EX"],
+                self.pipeline_registers["EX/MEM"],
+            )
+            stall = self.hazard_detection_unit.checkHazard_beq()
+            if stall:
+                self.pipeline_registers["IF/ID"].set_write(0)
+                pipeline_register.set_stall()
+                return pipeline_register
+            rs = self.pipeline_registers["IF/ID"].get_one_register("rs")
+            rt = self.pipeline_registers["IF/ID"].get_one_register("rt")
+
+            #fowarding unit
+
+            # self.forwarding_unit.set(
+            #     self.pipeline_registers["IF/ID"],
+            #     self.pipeline_registers["EX/MEM"],
+            #     self.pipeline_registers["MEM/WB"],
+            # )
+
+            # if self.forwarding_unit.get_rs() == 1:
+            #     rs = self.forwarding_unit.get_rs_value()
+            # if self.forwarding_unit.get_rt() == 1:
+            #     rt = self.forwarding_unit.get_rt_value()
+
+            if self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt):
+                pipeline_register.set_data(self.pipeline_registers["IF/ID"].get_one_register(
+                    "immediate"
+                ))
+        # IF/ID裡的值(ins,registers)傳給ID/EX
+        pipeline_register.set_name(self.pipeline_registers["IF/ID"].get_name())
+        pipeline_register.set_registers(self.pipeline_registers["IF/ID"].get_register())
+        # print(self.pipeline_registers["ID/EX"].get_name())
+        # print(self.pipeline_registers["ID/EX"].get_register())
+        return pipeline_register
 
     def EX_stage(self):
+        print("---------EX-----------------")
+        pipeline_register = pr.PipelineRegister()
+        if self.pipeline_registers["ID/EX"].IsEmpty():
+            return pipeline_register
+        
+        if self.pipeline_registers["ID/EX"].get_name() == "beq":
+            if self.pipeline_registers["EX/MEM"].get_data() == 0:
+                self.pipeline_registers["ID/EX"].set_stall()
+                self.PC_word = self.PC_word + int(self.pipeline_registers["ID/EX"].get_one_register("immediate"))
+            else:
+                return pipeline_register
+        
+        return pipeline_register
+        # if ID/EX pipeline register is empty then do nothing(cause stall is happened in ID stage)
+        # forwading unit check what rs and rt need to be replaced or not
         # check ALUSrc
         # calculate the ALU result
         # add the ALU result to the EX/MEM pipeline register
         pass
 
     def MEM_stage(self):
-        pass
+        print("---------MEM-----------------")
+        pipeline_register = pr.PipelineRegister()
+        if self.pipeline_registers["EX/MEM"].IsEmpty():
+            return pipeline_register
+        return pipeline_register
 
     def WB_stage(self):
         pass

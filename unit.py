@@ -1,9 +1,17 @@
 import pipeline_register as pr
 import pipeline_register as pr
+import pipeline_register as pr
 #a class to simulate the control unit 
 class ControlUnit:
     
     def __init__(self):
+        self.RegDst:str = '0'
+        self.ALUSrc:str = '0'
+        self.Branch:str = '0'
+        self.MemRead:str = '0'
+        self.MemWrite:str = '0'
+        self.RegWrite:str = '0'
+        self.MemToReg:str = '0'
         self.RegDst:str = '0'
         self.ALUSrc:str = '0'
         self.Branch:str = '0'
@@ -36,8 +44,7 @@ class ControlUnit:
 
     def get_control_signals(self):
         return {'RegDst':self.RegDst,'ALUSrc':self.ALUSrc, 'Branch':self.Branch, 'MemRead':self.MemRead, 'MemWrite':self.MemWrite, 'RegWrite':self.RegWrite, 'MemToReg':self.MemToReg}
-        return {'RegDst':self.RegDst,'ALUSrc':self.ALUSrc, 'Branch':self.Branch, 'MemRead':self.MemRead, 'MemWrite':self.MemWrite, 'RegWrite':self.RegWrite, 'MemToReg':self.MemToReg}
-
+        
 
 #a class to simulate the hazard detection unit
 #check if the instruction need to be stall (lw, sw, beq)
@@ -48,13 +55,48 @@ class ControlUnit:
 class HazardDetectionUnit:
     
     def __init__(self):
-        self.rs = ''
+        self.ins_name = ''
+        self.second_last_name = ''
+        self.next_name = ''
         self.rt = ''
-        self.rd = ''
-        self.last_rd = '' #ID/EX.rd
-        self.last_rt = '' #ID/EX.rt
-        self.second_last_rd = '' #EX/MEM.rd
-        self.second_last_rt = '' #EX/MEM.rt
+        self.rs = ''
+        self.next_rs = ''
+        self.next_rt = ''
+        self.last_rd = ''
+        self.second_last_rt = ''
+    #----new def----------
+    def set_lw_sw(self, this_instruction:pr.PipelineRegister, next_instruction:pr.PipelineRegister):
+        self.ins_name = this_instruction.get_name()
+        self.next_name = next_instruction.get_name()
+        self.rt = this_instruction.get_one_register('rt')
+        self.next_rs = next_instruction.get_one_register('rs')
+        self.next_rt = next_instruction.get_one_register('rt')
+
+    def set_beq(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister, second_last_instruction:pr.PipelineRegister):
+        
+        self.second_last_name = second_last_instruction.get_name()
+        self.rs = this_instruction.get_one_register('rs')
+        self.rt = this_instruction.get_one_register('rt')
+        self.last_rd = last_instruction.get_one_register('rd')
+        self.second_last_rd = second_last_instruction.get_one_register('rd')
+        self.second_last_rt = second_last_instruction.get_one_register('rt')
+    #just check if the instruction need to be stall
+    def checkHazard_lw_sw(self):
+        if(self.ins_name == 'lw' and self.rt == self.next_rs):
+            return True
+        elif(self.ins_name == 'lw' and self.rt == self.next_rt and (self.next_name != 'lw' or self.next_name != 'sw')):
+            return True
+        else:
+            return False
+        
+    def checkHazard_beq(self):
+        if(self.rs == self.last_rd or self.rt == self.last_rd):
+            return True
+        elif self.second_last_name == 'lw' and (self.rs == self.second_last_rt or self.rt == self.second_last_rt):
+            return True
+        else:
+            return False
+
 
 
 class ForwardingUnit:
@@ -71,7 +113,7 @@ class ForwardingUnit:
         self.second_last_rd='' 
         self.second_last_rt=''
     
-    def set(self, this_instruction, last_instruction, second_last_instruction):
+    def set(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister, second_last_instruction:pr.PipelineRegister):
         self.this_instruction = this_instruction
         self.last_instruction = last_instruction
         self.second_last_instruction = second_last_instruction
@@ -81,43 +123,6 @@ class ForwardingUnit:
         self.last_rt = last_instruction.get_one_register('rt')
         self.second_last_rd = second_last_instruction.get_one_register('rd')
         self.second_last_rt = second_last_instruction.get_one_register('rt')
-        
-    
-    def checkForwarding(self):
-    #check rd is the same as ID/EX.rt or ID/EX.rs and EX/MEM.rt or EX/MEM.rs
-    #if yes then forward(replace the value of the register with the value in the pipeline register)
-        if(self.second_last_rd!='' and (self.last_rd == self.rs or self.last_rd == self.rt)):
-            return True    
-        elif(self.last_rt != '' and (self.last_rt == self.rs or self.last_rt == self.rt)):
-            return True
-        elif(self.second_last_rd != '' and (self.second_last_rd == self.rs or self.second_last_rd == self.rt)):
-            return True
-        elif(self.second_last_rt != '' and (self.second_last_rt == self.rs or self.second_last_rt == self.rt)):
-            return True
-        
-        
-        self.rs = ''
-        self.rt = ''
-        self.rd = ''
-        self.last_rd = '' #ID/EX.rd
-        self.last_rt = '' #ID/EX.rt
-        self.second_last_rd = '' #EX/MEM.rd
-        self.second_last_rt = '' #EX/MEM.rt
-
-
-class ForwardingUnit:
-    #in ID stage
-
-    def __init__(self,this_instruction:pr.PipelineRegister(), last_instruction:pr.PipelineRegister(), second_last_instruction:pr.PipelineRegister()):
-        self.this_instruction = this_instruction
-        self.last_instruction = last_instruction
-        self.second_last_instruction = second_last_instruction
-        self.rs = this_instruction.registers['rs']
-        self.rt = this_instruction.registers['rt']
-        self.last_rd = last_instruction.registers['rd']
-        self.last_rt = last_instruction.registers['rt']
-        self.second_last_rd = second_last_instruction.registers['rd']
-        self.second_last_rt = second_last_instruction.registers['rt']
         
     
     def checkForwarding(self):
