@@ -236,6 +236,16 @@ class Compiler:
     def EX_stage(self):
         
         print("---------EX-----------------")
+        pipeline_register = pr.PipelineRegister()
+        if self.pipeline_registers["ID/EX"].IsEmpty():
+            return pipeline_register
+        
+        if self.pipeline_registers["ID/EX"].get_name() == "beq":
+            if self.pipeline_registers["EX/MEM"].get_data() == 0:
+                self.pipeline_registers["ID/EX"].set_stall()
+                self.PC_word = self.PC_word + int(self.pipeline_registers["ID/EX"].get_one_register("immediate"))
+            else:
+                return pipeline_register
         #check forwarding
         #self.pipeline_registers["EX/MEM"].set_registers ({"rs": '$1',"rt": '$2',"rd":'$4' })#test
         rs = self.pipeline_registers["ID/EX"].get_one_register('rs')
@@ -252,38 +262,33 @@ class Compiler:
         #add 
         if(self.pipeline_registers["ID/EX"].get_name()=='add'):
             #運算完結果傳給EX/MEM(data)
-            self.pipeline_registers["EX/MEM"].set_data(self.forwarding_unit.get_rs_value() + self.forwarding_unit.get_rt_value())
-            #print(self.pipeline_registers["EX/MEM"].get_data())
-            self.pipeline_registers["EX/MEM"].set_name('add') 
+            pipeline_register.set_data(self.forwarding_unit.get_rs_value() + self.forwarding_unit.get_rt_value())
         #sub
         elif(self.pipeline_registers["ID/EX"].get_name()=='sub'):   
-            
-            self.pipeline_registers["EX/MEM"].set_data(self.forwarding_unit.get_rt_value() - self.forwarding_unit.get_rs_value())   
-           # print(self.pipeline_registers["EX/MEM"].get_data())
-            self.pipeline_registers["EX/MEM"].set_name('sub')
+            pipeline_register.set_data(self.forwarding_unit.get_rt_value() - self.forwarding_unit.get_rs_value())
 
         #I-format指令
         #從ID/EX讀取指令名稱若為lw或sw則讀取immediate
         if self.pipeline_registers['ID/EX'].get_name()=='lw'|self.pipeline_registers['ID/EX'].get_name()=='sw':
             immediate = self.pipeline_registers["ID/EX"].get_one_register('immediate')
            
-
         #lw,sw
         elif self.pipeline_registers["ID/EX"].get_name()=='lw'|self.pipeline_registers["ID/EX"].get_name()=='sw':
-         
+            
             #offset+rs_value (address=>int((immediate)//4)+self.register_file.get_register_value(rs) ex:w2)
-            self.pipeline_registers["EX/MEM"].set_data('w'+str((int(immediate)//4)+self.forwarding_unit.get_rs_value()))
-            self.pipeline_registers["EX/MEM"].set_name('lw')
+            pipeline_register.set_data('w'+str((int(immediate)//4)+self.forwarding_unit.get_rs_value()))
+            
            
         else:
-            print("instruction =beq")
+            print("wrong")
+
+        pipeline_register.set_name(self.pipeline_registers["ID/EX"].get_name())
        
-        
+        return pipeline_register
         # read data from the register file, and store the data to the EX/MEM pipeline register
         # check ALUSrc
         # calculate the ALU result
         # add the ALU result to the EX/MEM pipeline register
-        pass
 
     def MEM_stage(self):
         print("---------MEM-----------------")
