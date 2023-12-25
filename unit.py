@@ -202,3 +202,7 @@ class ForwardingUnit:
 
             
     
+    def checkForwarding_sw(self):
+       if (self.this_name == 'sw' and self.last_rd == self.rt):
+           return True
+        
