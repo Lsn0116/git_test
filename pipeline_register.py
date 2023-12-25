@@ -60,6 +60,18 @@ class PipelineRegister:
             return self.control_signals[i]
         else:
             return None
+    def clear(self):
+        self.name = ""
+        self.data = 0
+        self.control_signals = {}
+        self.registers = {}
+        self.write = 1
+        self.stall = 0
+    def IsEmpty(self):
+        if self.name == "":
+            return True
+        else:
+            return False
     
 
   

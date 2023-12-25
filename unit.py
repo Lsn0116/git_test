@@ -128,15 +128,7 @@ class ForwardingUnit:
             elif(self.rs==self.second_last_rt and self.second_last_rd == ''):    #MEM hazrad(I-format)
                 self.rs_value = self.second_last_data
             
-            '''
-        #I-format
-        elif(self.ins_name == 'lw' or self.ins_name == 'sw'):
-            if(self.rt==self.last_rd):
-                self.forwarding_type = 'EX_rt'
-            elif(self.rt==self.second_last_rd):
-                self.forwarding_type = 'MEM_rt'
-            else:
-                print("no forwarding")'''
+       
 
     def checkForwarding_branch(self):
         #rt
