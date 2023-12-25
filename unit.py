@@ -84,7 +84,14 @@ class ForwardingUnit:
         self.last_rt = last_instruction.get_one_register('rt')
         self.second_last_rd = second_last_instruction.get_one_register('rd')
         self.second_last_rt = second_last_instruction.get_one_register('rt')
-        
+
+    def set_sw(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister):
+        self.this_name = this_instruction.get_name() #if this is sw
+        self.this_instruction = this_instruction
+        self.last_instruction = last_instruction
+        self.rt = this_instruction.get_one_register('rt')
+        self.last_rd = last_instruction.get_one_register('rd')
+
     
     def checkForwarding(self):
     #check rd is the same as ID/EX.rt or ID/EX.rs and EX/MEM.rt or EX/MEM.rs
@@ -111,36 +118,6 @@ class ForwardingUnit:
     def get_forwarded_data(self):
         return self.forwarded_data
 
-
-class ForwardingUnit:
-    #in ID stage
-
-    def __init__(self,this_instruction:pr.PipelineRegister(), last_instruction:pr.PipelineRegister(), second_last_instruction:pr.PipelineRegister()): 
-        self.this_instruction = this_instruction
-        self.last_instruction = last_instruction
-        self.second_last_instruction = second_last_instruction
-        self.rs = this_instruction.registers['rs']
-        self.rt = this_instruction.registers['rt']
-        self.last_rd = last_instruction.registers['rd']
-        self.last_rt = last_instruction.registers['rt']
-        self.second_last_rd = second_last_instruction.registers['rd']
-        self.second_last_rt = second_last_instruction.registers['rt']
-        
-    
-    def checkForwarding(self):
-    #check rd is the same as ID/EX.rt or ID/EX.rs and EX/MEM.rt or EX/MEM.rs
-    #if yes then forward(replace the value of the register with the value in the pipeline register)
-        if(self.second_last_rd!='' and (self.last_rd == self.rs or self.last_rd == self.rt)):
-            return True    
-        elif(self.last_rt != '' and (self.last_rt == self.rs or self.last_rt == self.rt)):
-            return True
-        elif(self.second_last_rd != '' and (self.second_last_rd == self.rs or self.second_last_rd == self.rt)):
-            return True
-        elif(self.second_last_rt != '' and (self.second_last_rt == self.rs or self.second_last_rt == self.rt)):
-            return True
-        
-     #new function------------------------------------------    
-    def get_forwarded_data(self):
-        return self.forwarded_data    
-        
-        
+    def checkForwarding_sw(self):
+       if (self.this_name == 'sw' and self.last_rd == self.rt):
+           return True
