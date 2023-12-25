@@ -4,10 +4,11 @@
 # control signals
 # instruction name
 # write (write to the pipeline register)
+import registers_N_memories as rnm
 class PipelineRegister:
     def __init__(self):
         self.name = ""  # name of instruction
-        self.data = 0   # data values
+        self.data: int | str  # data values
         self.control_signals = {}  # control signals
         self.registers = {}  # registers
         self.write = 1  # write to the pipeline register 1 = yes, 0 = no
@@ -43,8 +44,9 @@ class PipelineRegister:
             if signal in self.control_signals:
                  del self.control_signals[control_signals]
 
-    def add_data(self, key, value):
-        self.data[key] = value
+    def set_data(self, data):
+        self.data = data
+
     def get_register(self):
         return self.registers
 
@@ -53,9 +55,21 @@ class PipelineRegister:
             return self.registers[i]
         else:
             return None
-     #-------new def------------------
+    #-------new def------------------
     def get_control_signals(self):
         return self.control_signals
+    def get_data(self):
+        return self.data
+    
+    def get_one_control_signals(self, i):
+        if i in self.control_signals:
+            return self.control_signals[i]
+        else:
+            return None
+    
+
+  
+
     def set_stall(self):
         self.stall = 1
     

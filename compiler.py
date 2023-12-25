@@ -234,21 +234,52 @@ class Compiler:
         return pipeline_register
 
     def EX_stage(self):
+        
         print("---------EX-----------------")
-        pipeline_register = pr.PipelineRegister()
-        if self.pipeline_registers["ID/EX"].IsEmpty():
-            return pipeline_register
+        #check forwarding
+        #self.pipeline_registers["EX/MEM"].set_registers ({"rs": '$1',"rt": '$2',"rd":'$4' })#test
+        rs = self.pipeline_registers["ID/EX"].get_one_register('rs')
+        rs_value=self.register_file.get_register_value(rs)
+        rt = self.pipeline_registers["ID/EX"].get_one_register('rt')
+        rt_value=self.register_file.get_register_value(rt)
+
+        self.forwarding_unit.set(self.pipeline_registers["ID/EX"], self.pipeline_registers["EX/MEM"], self.pipeline_registers["MEM/WB"],rs_value,rt_value)
+        ALUSrc = self.pipeline_registers["ID/EX"].get_one_control_signals('ALUSrc')
+        self.forwarding_unit.checkForwarding(ALUSrc)
         
-        if self.pipeline_registers["ID/EX"].get_name() == "beq":
-            if self.pipeline_registers["EX/MEM"].get_data() == 0:
-                self.pipeline_registers["ID/EX"].set_stall()
-                self.PC_word = self.PC_word + int(self.pipeline_registers["ID/EX"].get_one_register("immediate"))
-            else:
-                return pipeline_register
         
-        return pipeline_register
-        # if ID/EX pipeline register is empty then do nothing(cause stall is happened in ID stage)
-        # forwading unit check what rs and rt need to be replaced or not
+        #R-format指令
+        #add 
+        if(self.pipeline_registers["ID/EX"].get_name()=='add'):
+            #運算完結果傳給EX/MEM(data)
+            self.pipeline_registers["EX/MEM"].set_data(self.forwarding_unit.get_rs_value() + self.forwarding_unit.get_rt_value())
+            #print(self.pipeline_registers["EX/MEM"].get_data())
+            self.pipeline_registers["EX/MEM"].set_name('add') 
+        #sub
+        elif(self.pipeline_registers["ID/EX"].get_name()=='sub'):   
+            
+            self.pipeline_registers["EX/MEM"].set_data(self.forwarding_unit.get_rt_value() - self.forwarding_unit.get_rs_value())   
+           # print(self.pipeline_registers["EX/MEM"].get_data())
+            self.pipeline_registers["EX/MEM"].set_name('sub')
+
+        #I-format指令
+        #從ID/EX讀取指令名稱若為lw或sw則讀取immediate
+        if self.pipeline_registers['ID/EX'].get_name()=='lw'|self.pipeline_registers['ID/EX'].get_name()=='sw':
+            immediate = self.pipeline_registers["ID/EX"].get_one_register('immediate')
+           
+
+        #lw,sw
+        elif self.pipeline_registers["ID/EX"].get_name()=='lw'|self.pipeline_registers["ID/EX"].get_name()=='sw':
+         
+            #offset+rs_value (address=>int((immediate)//4)+self.register_file.get_register_value(rs) ex:w2)
+            self.pipeline_registers["EX/MEM"].set_data('w'+str((int(immediate)//4)+self.forwarding_unit.get_rs_value()))
+            self.pipeline_registers["EX/MEM"].set_name('lw')
+           
+        else:
+            print("instruction =beq")
+       
+        
+        # read data from the register file, and store the data to the EX/MEM pipeline register
         # check ALUSrc
         # calculate the ALU result
         # add the ALU result to the EX/MEM pipeline register
@@ -288,6 +319,7 @@ class Compiler:
         drop_controlSignal = ['MemToReg']
         self.pipeline_registers['MEM/WB'].remove_control_signals(drop_controlSignal)
             
+
 
     def WB_stage(self):
         ###TODO:

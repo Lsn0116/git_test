@@ -1,6 +1,5 @@
 import pipeline_register as pr
-import pipeline_register as pr
-import pipeline_register as pr
+
 #a class to simulate the control unit 
 class ControlUnit:
     
@@ -103,7 +102,7 @@ class ForwardingUnit:
     #in ID stage
 
     def __init__(self):
-        self.this_instruction:pr.PipelineRegister
+        '''self.this_instruction:pr.PipelineRegister
         self.last_instruction:pr.PipelineRegister
         self.second_last_instruction:pr.PipelineRegister
         self.rs =''
@@ -111,55 +110,103 @@ class ForwardingUnit:
         self.last_rd=''
         self.last_rt=''
         self.second_last_rd='' 
-        self.second_last_rt=''
-        self.forwarded_data = None
+        self.second_last_rt='''''
+        self.ins_name = ''
+        self.last_name = ''
+        self.second_last_name = ''
+        self.rt = ''
+        self.rs = ''
+        self.last_rd = ''
+        self.last_rt = ''
+        self.second_last_rd = ''
+        self.second_last_rt = ''
+        self.forwarding_type =''
+
+        self.rs_value = ''
+        self.rt_value = ''
+        self.last_data = ''
+        self.second_last_data = ''
     
-    def set(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister, second_last_instruction:pr.PipelineRegister):
-        self.this_instruction = this_instruction
-        self.last_instruction = last_instruction
-        self.second_last_instruction = second_last_instruction
-        self.rs = self.this_instruction.get_one_register('rs')
+    
+    def set(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister, second_last_instruction:pr.PipelineRegister,rs_value,rt_value):
+        self.ins_name = this_instruction.get_name()
         self.rt = this_instruction.get_one_register('rt')
+        self.rs = this_instruction.get_one_register('rs')
         self.last_rd = last_instruction.get_one_register('rd')
         self.last_rt = last_instruction.get_one_register('rt')
         self.second_last_rd = second_last_instruction.get_one_register('rd')
         self.second_last_rt = second_last_instruction.get_one_register('rt')
+        self.last_data = last_instruction.get_data()
+        self.second_last_data = second_last_instruction.get_data()
+        self.rs_value=rs_value
+        self.rt_value=rt_value
 
+    
     def set_sw(self, this_instruction:pr.PipelineRegister, last_instruction:pr.PipelineRegister):
         self.this_name = this_instruction.get_name() #if this is sw
         self.this_instruction = this_instruction
         self.last_instruction = last_instruction
         self.rt = this_instruction.get_one_register('rt')
         self.last_rd = last_instruction.get_one_register('rd')
-        
-    
-    def checkForwarding(self):
+    def checkForwarding(self, ALUSrc):
     #check rd is the same as ID/EX.rt or ID/EX.rs and EX/MEM.rt or EX/MEM.rs
     #if yes then forward(replace the value of the register with the value in the pipeline register)
-        if(self.second_last_rd!='' and (self.last_rd == self.rs or self.last_rd == self.rt)):
-            return True    
-        elif(self.last_rt != '' and (self.last_rt == self.rs or self.last_rt == self.rt)):
-            return True
-        elif(self.second_last_rd != '' and (self.second_last_rd == self.rs or self.second_last_rd == self.rt)):
-            return True
-        elif(self.second_last_rt != '' and (self.second_last_rt == self.rs or self.second_last_rt == self.rt)):
-            return True
-        
-        
-        self.rs = ''
-        self.rt = ''
-        self.rd = ''
-        self.last_rd = '' #ID/EX.rd
-        self.last_rt = '' #ID/EX.rt
-        self.second_last_rd = '' #EX/MEM.rd
-        self.second_last_rt = '' #EX/MEM.rt
+    
+        #R-format
+        #forwarding type:(EX_rt:從EX/MEM讀取data給rt,EX_rs:從EX/MEM讀取data給rs, MEM_rt:從MEM/WB讀取data給rt, MEM_rs:從MEM/WB讀取data給rs)
+        if ALUSrc == '0':
+            #rt
+            if(self.rt==self.last_rd):   #EX hazrad
+                self.rt_value = self.last_data
+            elif(self.rt==self.second_last_rd):     #MEM hazrad(R-format)
+                self.rt_value = self.second_last_data
+            elif(self.rt==self.second_last_rt and self.second_last_rd == ''):#MEM hazrad(I-format)
+                self.rt_value = self.second_last_data
+            
+            #rs
+            if(self.rs==self.last_rd):  #EX hazrad
+                self.rs_value = self.last_data
+            elif(self.rs==self.second_last_rd): #MEM hazrad(R-format)
+                self.rs_value = self.second_last_data
+            elif(self.rs==self.second_last_rt and self.second_last_rd == ''):    #MEM hazrad(I-format)
+                self.rs_value = self.second_last_data
+            
+            '''
+        #I-format
+        elif(self.ins_name == 'lw' or self.ins_name == 'sw'):
+            if(self.rt==self.last_rd):
+                self.forwarding_type = 'EX_rt'
+            elif(self.rt==self.second_last_rd):
+                self.forwarding_type = 'MEM_rt'
+            else:
+                print("no forwarding")'''
 
-    #new function------------------------------------------    
-    def get_forwarded_data(self):
-        return self.forwarded_data
+    def checkForwarding_branch(self):
+        #rt
+        if(self.rt==self.last_rd):   #EX hazrad
+             self.rt_value = self.last_data
+        elif(self.rt==self.second_last_rd):     #MEM hazrad(R-format)
+                self.rt_value = self.second_last_data
+        elif(self.rt==self.second_last_rt and self.second_last_rd == ''):#MEM hazrad(I-format)
+                self.rt_value = self.second_last_data
+            
+        #rs
+        if(self.rs==self.last_rd):  #EX hazrad
+            self.rs_value = self.last_data
+        elif(self.rs==self.second_last_rd): #MEM hazrad(R-format)
+            self.rs_value = self.second_last_data
+        elif(self.rs==self.second_last_rt and self.second_last_rd == ''):    #MEM hazrad(I-format)
+            self.rs_value = self.second_last_data
 
-    def checkForwarding_sw(self):
-        if (self.this_name == 'sw' and self.last_rd == self.rt):
-            return True
-        else:
-            return False
+    def get_rt_value(self):
+        return self.rt_value
+
+    def get_rs_value(self):
+        return self.rs_value
+        
+
+    
+
+
+            
+    
