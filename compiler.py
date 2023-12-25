@@ -238,6 +238,14 @@ class Compiler:
         pipeline_register = pr.PipelineRegister()
         if self.pipeline_registers["ID/EX"].IsEmpty():
             return pipeline_register
+        
+        if self.pipeline_registers["ID/EX"].get_name() == "beq":
+            if self.pipeline_registers["EX/MEM"].get_data() == 0:
+                self.pipeline_registers["ID/EX"].set_stall()
+                self.PC_word = self.PC_word + int(self.pipeline_registers["ID/EX"].get_one_register("immediate"))
+            else:
+                return pipeline_register
+        
         return pipeline_register
         # if ID/EX pipeline register is empty then do nothing(cause stall is happened in ID stage)
         # forwading unit check what rs and rt need to be replaced or not
