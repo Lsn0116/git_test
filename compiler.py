@@ -277,8 +277,9 @@ class Compiler:
             aluResult = self.pipeline_registers['EX/MEM'].get_data() #not this, it would be 'w1' or something like this
 
             # Forwarding 
-            self.forwarding_unit.set(self.pipeline_registers["EX/MEM"], None, None)
-            self.forwarding_unit.checkForwarding()
+            self.forwarding_unit.set_sw(self.pipeline_registers["EX/MEM"], self.pipeline_registers["MEM/WB"])
+            self.forwarding_unit.checkForwarding_sw()
+            
 
             if memRead: #load
                 read_address = aluResult
