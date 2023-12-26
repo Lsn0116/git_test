@@ -78,7 +78,6 @@ class HazardDetectionUnit:
         self.rs = this_instruction.get_one_register('rs')
         self.rt = this_instruction.get_one_register('rt')
         self.last_rd = last_instruction.get_one_register('rd')
-        self.second_last_rd = second_last_instruction.get_one_register('rd')
         self.second_last_rt = second_last_instruction.get_one_register('rt')
     #just check if the instruction need to be stall
     def checkHazard_lw_sw(self):

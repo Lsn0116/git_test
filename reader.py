@@ -20,7 +20,7 @@ class Reader:
             # get the instruction
             instruction = line[0]
             # get the rest of the line
-            rest = line[1]
+            rest = "".join(line[1:])
             # add the instruction and the rest to the instructions
             instructions.append([instruction, rest])
         # return the instructions

@@ -38,7 +38,7 @@ class Compiler:
             "EX/MEM": pr.PipelineRegister(),
             "MEM/WB": pr.PipelineRegister(),
         }
-        
+        self.cycle = 0
 
     def compile(self):
        
@@ -53,6 +53,8 @@ class Compiler:
            
             if self.PC_word == len(self.memory.get_all_ins_memory()):
                 if MW.IsEmpty() and EM.IsEmpty() and DE.IsEmpty() and FD.IsEmpty():
+                    self.cycle += 1
+                    print("cycle: ", self.cycle)
                     break
             # self.IF_stage()
             # self.ID_stage()
@@ -84,7 +86,8 @@ class Compiler:
             print("MEM/WB")
             print(self.pipeline_registers["MEM/WB"].print_register())
             print("--------------------------------------------------")
-
+            self.cycle += 1
+            print("cycle: ", self.cycle)
         self.memory.print_data_memory()
         self.register_file.print_register_values()
         return
@@ -182,6 +185,8 @@ class Compiler:
         pipeline_register = pr.PipelineRegister()
         if self.pipeline_registers["IF/ID"].IsEmpty():
             return pipeline_register
+        if self.pipeline_registers["ID/EX"].get_stall() == 1:
+            pipeline_register.set_stall()
         # decide the control signals for the ID/EX pipeline register
         print("                   name: " + self.pipeline_registers["IF/ID"].get_name())
         self.control_unit.clear_control_signals()
@@ -190,16 +195,17 @@ class Compiler:
         )
         pipeline_register.set_control_signals(self.control_unit.get_control_signals())
         # print(self.pipeline_registers["ID/EX"].get_control_signals())#{'RegDst': '0', 'ALUSrc': '1', 'Branch': '0', 'MemRead': '1', 'MemWrite': '0', 'RegWrite': '1', 'MemToReg': '1'}
+        if self.pipeline_registers["ID/EX"].get_name() == "lw":
+            self.hazard_detection_unit.set_lw_sw(
+                self.pipeline_registers["ID/EX"], self.pipeline_registers["IF/ID"]
+            )
+            if self.hazard_detection_unit.checkHazard_lw_sw():
+                self.pipeline_registers["IF/ID"].set_write(0)
+                pipeline_register.set_stall()
+                return pipeline_register
 
-        self.hazard_detection_unit.set_lw_sw(
-            self.pipeline_registers["ID/EX"], self.pipeline_registers["IF/ID"]
-        )
         # detect hazard
-        if self.hazard_detection_unit.checkHazard_lw_sw():
-            self.pipeline_registers["IF/ID"].set_write(0)
-            pipeline_register.set_stall()
-            return pipeline_register
-
+       
         # check RegDst(use the data self.control_unit.get_control_signals())
         # check branch (PC adder and reg compare(use the data stored in the pipeline register))
 
@@ -216,8 +222,24 @@ class Compiler:
                 self.pipeline_registers["IF/ID"].set_write(0)
                 pipeline_register.set_stall()
                 return pipeline_register
+        # check forwarding
             rs = self.pipeline_registers["IF/ID"].get_one_register("rs")
             rt = self.pipeline_registers["IF/ID"].get_one_register("rt")
+            rs_value = self.register_file.get_register_value(rs)
+            rt_value = self.register_file.get_register_value(rt)
+            self.forwarding_unit.clear()
+            self.forwarding_unit.set(
+                self.pipeline_registers["IF/ID"],
+                self.pipeline_registers["EX/MEM"],
+                self.pipeline_registers["MEM/WB"],
+                rs_value,
+                rt_value,
+            )
+            
+            self.forwarding_unit.checkForwarding_branch()
+            rs_value = self.forwarding_unit.get_rs_value()
+            rt_value = self.forwarding_unit.get_rt_value()
+            
 
             #fowarding unit
 
@@ -232,7 +254,7 @@ class Compiler:
             # if self.forwarding_unit.get_rt() == 1:
             #     rt = self.forwarding_unit.get_rt_value()
 
-            if self.register_file.get_register_value(rs) == self.register_file.get_register_value(rt):
+            if rs_value == rt_value:
                 pipeline_register.set_data(0)
         # IF/ID裡的值(ins,registers)傳給ID/EX
         pipeline_register.set_name(self.pipeline_registers["IF/ID"].get_name())
@@ -248,9 +270,9 @@ class Compiler:
             return pipeline_register
         
         if self.pipeline_registers["ID/EX"].get_name() == "beq":
-            if self.pipeline_registers["EX/MEM"].get_data() == 0:
+            if self.pipeline_registers["ID/EX"].get_data() == 0:
                 self.pipeline_registers["ID/EX"].set_stall()
-                self.PC_word = self.PC_word + int(self.pipeline_registers["ID/EX"].get_one_register("immediate"))
+                self.PC_word = self.PC_word + int(self.pipeline_registers["ID/EX"].get_one_register("immediate"))-1
             else:
                 return pipeline_register
         #check forwarding
