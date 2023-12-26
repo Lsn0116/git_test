@@ -102,15 +102,6 @@ class ForwardingUnit:
     #in ID stage
 
     def __init__(self):
-        '''self.this_instruction:pr.PipelineRegister
-        self.last_instruction:pr.PipelineRegister
-        self.second_last_instruction:pr.PipelineRegister
-        self.rs =''
-        self.rt =''
-        self.last_rd=''
-        self.last_rt=''
-        self.second_last_rd='' 
-        self.second_last_rt='''''
         self.ins_name = ''
         self.last_name = ''
         self.second_last_name = ''
@@ -200,7 +191,7 @@ class ForwardingUnit:
         if (self.this_name == 'sw' and self.last_rd == self.rt):
             
             self.rt_value = self.last_data
-            print('sw hazard: ', self.rt_value)
+            
         return self.rt_value
     
     def clear(self):

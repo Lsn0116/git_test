@@ -16,11 +16,16 @@ class RegisterFile:
         return self.register_values[register_name]
     
     def set_register_value(self, register_name, register_value):
-        self.register_values[register_name] = register_value
+        if register_name != '$0':
+            self.register_values[register_name] = register_value
 
-    def print_register_values(self):
+    def print_register_values(self,filename):
+        f = open(filename,'a')
+        f.write('\n\n')
         for i in range(32):
             print(self.register_names[i] +': '+ str(self.register_values[self.register_names[i]]))
+            f.write(self.register_names[i] +': '+ str(self.register_values[self.register_names[i]])+'\n')
+        f.close()
 
 class Memory:
     def __init__(self,ins_memory):
@@ -43,10 +48,14 @@ class Memory:
     def set_data_memory(self, address, value):
         self.data_memory[address] = value
     
-    def print_data_memory(self):
+    def print_data_memory(self,filename):
+        f = open(filename,'a')
+        f.write('\n\n')
         for i in range(32):
             print('w'+str(i)+': '+str(self.data_memory['w'+str(i)]))
-    #------------new def--------------------------------------------------
+            f.write('w'+str(i)+': '+str(self.data_memory['w'+str(i)])+'\n')
+        f.close()
+
     def get_all_ins_memory(self):
         return self.instruction_memory
     def get_data_memory_withW(self,i):

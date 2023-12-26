@@ -55,7 +55,7 @@ class PipelineRegister:
             return self.registers[i]
         else:
             return None
-    #-------new def------------------
+   
     def get_control_signals(self):
         return self.control_signals
     def get_data(self):
@@ -79,9 +79,6 @@ class PipelineRegister:
         else:
             return False
     
-
-  
-
     def set_stall(self):
         self.stall = 1
     
